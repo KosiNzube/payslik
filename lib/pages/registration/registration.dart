@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -10,6 +11,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../controller/create_wallet_controller.dart';
 import '../../controller/organization_controller.dart';
 import '../../models/Country.dart';
+import '../../utils/api_service.dart';
 
 class RegistrationPage extends StatefulWidget {
   const RegistrationPage({super.key});
@@ -47,13 +49,19 @@ class _RegistrationPageState extends State<RegistrationPage> {
   final TextEditingController ippis_number = TextEditingController();
   final TextEditingController pf_number = TextEditingController();
 
-
+  Timer? _debounceTimer;
+  bool _isLoadingLedger = false;
+  bool _isLedgerVerified = false;
+  String? _verifiedName;
+  String? _ledgerErrorMessage;
   String? _selectedIdType;
   bool _showIdInput = false;
   bool _showFullForm = false;
   bool _hasPopulatedFields = false;
   bool _showFullForm_no_KYC = false;
   String? _selectedGender;
+  bool get canProceedWithRegistration => _isLedgerVerified && _verifiedName != null;
+
   Color? _primaryColor;
   Color? _secondaryColor;
   Color? _tertiaryColor;
@@ -140,9 +148,74 @@ class _RegistrationPageState extends State<RegistrationPage> {
     _loadCountries();
     _loadCurrencies();
     _loadPrimaryColorAndLogo();
+    ledger_number.addListener(_onLedgerNumberChanged);
+
     _loadRegistrationOptions();
 
   }
+
+  void _onLedgerNumberChanged() {
+    _debounceTimer?.cancel();
+
+    if (mounted) {
+      setState(() {
+        _isLedgerVerified = false;
+        _verifiedName = null;
+        _ledgerErrorMessage = null;
+      });
+    }
+
+    final ledgerNumber = ledger_number.text.trim();
+
+    if (ledgerNumber.isNotEmpty) {
+      _debounceTimer = Timer(const Duration(milliseconds: 800), () {
+        _verifyLedgerNumber(ledgerNumber);
+      });
+    }
+  }
+
+  Future<void> _verifyLedgerNumber(String ledgerNumber) async {
+    if (!mounted) return;
+
+    setState(() {
+      _isLoadingLedger = true;
+      _ledgerErrorMessage = null;
+    });
+
+    try {
+      final response = await ApiService.getRequest(
+        '/verify/primary-kyc-customized-api-lookup-document/$ledgerNumber',
+      );
+
+      if (!mounted) return;
+
+      if (response['status'] == true) {
+        setState(() {
+          _isLoadingLedger = false;
+          _isLedgerVerified = true;
+          _verifiedName = response['data']['full_name'];
+          _ledgerErrorMessage = null;
+        });
+      } else {
+        setState(() {
+          _isLoadingLedger = false;
+          _isLedgerVerified = false;
+          _verifiedName = null;
+          _ledgerErrorMessage = response['message'] ?? 'Invalid ledger number. Please contact SON to obtain ledger ID.';
+        });
+      }
+    } catch (e) {
+      if (!mounted) return;
+
+      setState(() {
+        _isLoadingLedger = false;
+        _isLedgerVerified = false;
+        _verifiedName = null;
+        _ledgerErrorMessage = 'Unable to verify ledger number. Please contact SON to obtain ledger ID.';
+      });
+    }
+  }
+
   Future<void> _loadCurrencies() async {
     try {
       if (!mounted) return;
@@ -194,6 +267,8 @@ class _RegistrationPageState extends State<RegistrationPage> {
 
   @override
   void dispose() {
+    _debounceTimer?.cancel();
+    ledger_number.removeListener(_onLedgerNumberChanged);
     _videoController.dispose();
     super.dispose();
   }
@@ -1023,14 +1098,90 @@ class _RegistrationPageState extends State<RegistrationPage> {
                 TextFormField(
                   controller: ledger_number,
                   style: inputTextStyle,
-                  decoration: _buildInputDecoration("Ledger Number"),
+                  decoration: _buildInputDecoration("Ledger Number").copyWith(
+                    suffixIcon: _isLoadingLedger
+                        ? const Padding(
+                      padding: EdgeInsets.all(12.0),
+                      child: SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                    )
+                        : _isLedgerVerified
+                        ? const Icon(Icons.check_circle, color: Colors.green)
+                        : null,
+                  ),
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) {
                       return 'Ledger Number cannot be empty';
                     }
-                    return null; // Return null if valid
+
+                    if (!_isLedgerVerified) {
+                      return 'Please enter a valid ledger number';
+                    }
+
+                    return null;
                   },
                 ),
+
+
+              const SizedBox(height: 12),
+
+              // Display verified name
+              if (_isLedgerVerified && _verifiedName != null) ...[
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.green.shade50,
+                    border: Border.all(color: Colors.green.shade200),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.person, color: Colors.green.shade600, size: 20),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Verified: $_verifiedName',
+                          style: TextStyle(
+                            color: Colors.green.shade700,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+
+              // Display error message
+              if (_ledgerErrorMessage != null) ...[
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.red.shade50,
+                    border: Border.all(color: Colors.red.shade200),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(Icons.error_outline, color: Colors.red.shade600, size: 20),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          _ledgerErrorMessage!,
+                          style: TextStyle(
+                            color: Colors.red.shade700,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
 
                 const SizedBox(height: 16),
                 TextFormField(
@@ -1205,84 +1356,100 @@ class _RegistrationPageState extends State<RegistrationPage> {
                 onPressed: _isTermsAccepted
                     ? () async {
                   if (_formKey.currentState?.validate() ?? false) {
-                    final controller = Provider.of<NinVerificationController>(context, listen: false);
 
-                    if(identityCode=="0075"){
-                      await controller.submitRegistration(
-                        idType: _selectedIdType!,
-                        idNumber: _idNumberController.text.trim(),
-                        firstName: _firstNameController.text.trim(),
-                        middleName: _middleNameController.text.trim(),
-                        lastName: _lastNameController.text.trim(),
-                        email: _emailController.text.trim(),
-                        username: _usernameController.text.trim(),
-                        telephone: _telephoneController.text.trim(),
-                        address: _addressController.text.trim(),
-                        countryId: _selectedCountry!.id,
-                        telPrefix: _selectedCountry!.phoneCode,
-                        gender: gender,
-                        password: _passwordController.text.trim(),
-                        referral: _referralNumberController.text.trim(),
-                          ledger_number:ledger_number.text.trim(),
-                          ippis_number:ippis_number.text.trim(),
-                          pf_number:pf_number.text.trim(),
-                        transactionPin: int.parse(_transactionPinController.text
-                            .trim()),
-                        dateOfBirth: _dobController.text.trim(),
-                        should_create_virtual_wallet: should_create_virtual_wallet,
-                        identityCode:identityCode,
-                      );
-                    }else {
-                      await controller.submitRegistration(
-                        idType: _selectedIdType!,
-                        idNumber: _idNumberController.text.trim(),
-                        firstName: _firstNameController.text.trim(),
-                        middleName: _middleNameController.text.trim(),
-                        lastName: _lastNameController.text.trim(),
-                        email: _emailController.text.trim(),
-                        username: _usernameController.text.trim(),
-                        telephone: _telephoneController.text.trim(),
-                        address: _addressController.text.trim(),
-                        countryId: _selectedCountry!.id,
-                        telPrefix: _selectedCountry!.phoneCode,
-                        gender: gender,
-                        password: _passwordController.text.trim(),
-                        referral: _referralNumberController.text.trim(),
-                        transactionPin: int.parse(_transactionPinController.text
-                            .trim()),
-                        dateOfBirth: _dobController.text.trim(),
-                        should_create_virtual_wallet: should_create_virtual_wallet,
-                        identityCode:identityCode,
-                        currency_code: selectedCurrencyId,
+                      final controller = Provider.of<NinVerificationController>(
+                          context, listen: false);
 
-                      );
-                    }
-                    if (controller.submissionMessage.contains("successful")) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: const Text("Awaiting email verification"),
-                          backgroundColor: Colors.green,
-                          behavior: SnackBarBehavior.floating,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
+
+                      if (identityCode == "0075") {
+                        if (canProceedWithRegistration) {
+
+                          await controller.submitRegistration(
+                          idType: _selectedIdType!,
+                          idNumber: _idNumberController.text.trim(),
+                          firstName: _firstNameController.text.trim(),
+                          middleName: _middleNameController.text.trim(),
+                          lastName: _lastNameController.text.trim(),
+                          email: _emailController.text.trim(),
+                          username: _usernameController.text.trim(),
+                          telephone: _telephoneController.text.trim(),
+                          address: _addressController.text.trim(),
+                          countryId: _selectedCountry!.id,
+                          telPrefix: _selectedCountry!.phoneCode,
+                          gender: gender,
+                          password: _passwordController.text.trim(),
+                          referral: _referralNumberController.text.trim(),
+                          ledger_number: ledger_number.text.trim(),
+                          ippis_number: ippis_number.text.trim(),
+                          pf_number: pf_number.text.trim(),
+                          transactionPin: int.parse(
+                              _transactionPinController.text
+                                  .trim()),
+                          dateOfBirth: _dobController.text.trim(),
+                          should_create_virtual_wallet: should_create_virtual_wallet,
+                          identityCode: identityCode,
+                        );
+                        }else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Please verify your ledger number before proceeding'),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                        }
+                      } else {
+                        await controller.submitRegistration(
+                          idType: _selectedIdType!,
+                          idNumber: _idNumberController.text.trim(),
+                          firstName: _firstNameController.text.trim(),
+                          middleName: _middleNameController.text.trim(),
+                          lastName: _lastNameController.text.trim(),
+                          email: _emailController.text.trim(),
+                          username: _usernameController.text.trim(),
+                          telephone: _telephoneController.text.trim(),
+                          address: _addressController.text.trim(),
+                          countryId: _selectedCountry!.id,
+                          telPrefix: _selectedCountry!.phoneCode,
+                          gender: gender,
+                          password: _passwordController.text.trim(),
+                          referral: _referralNumberController.text.trim(),
+                          transactionPin: int.parse(
+                              _transactionPinController.text
+                                  .trim()),
+                          dateOfBirth: _dobController.text.trim(),
+                          should_create_virtual_wallet: should_create_virtual_wallet,
+                          identityCode: identityCode,
+                          currency_code: selectedCurrencyId,
+
+                        );
+                      }
+                      if (controller.submissionMessage.contains("successful")) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: const Text("Awaiting email verification"),
+                            backgroundColor: Colors.green,
+                            behavior: SnackBarBehavior.floating,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
                           ),
-                        ),
-                      );
-                      await Future.delayed(const Duration(seconds: 2));
-                      _resetFormState();
-                      Navigator.pushReplacementNamed(context, '/reg_success');
-                    } else {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(controller.submissionMessage),
-                          backgroundColor: Colors.red,
-                          behavior: SnackBarBehavior.floating,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
+                        );
+                        await Future.delayed(const Duration(seconds: 2));
+                        _resetFormState();
+                        Navigator.pushReplacementNamed(context, '/reg_success');
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(controller.submissionMessage),
+                            backgroundColor: Colors.red,
+                            behavior: SnackBarBehavior.floating,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
                           ),
-                        ),
-                      );
-                    }
+                        );
+                      }
+
                   }
                 }
                     : null,

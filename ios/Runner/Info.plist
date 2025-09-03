@@ -5,6 +5,20 @@
     <key>NSFaceIDUsageDescription</key>
     <string>We use Face ID to secure your data.</string>
 
+    <!-- ADD THESE NEW PRIVACY DESCRIPTIONS -->
+    <key>NSPhotoLibraryUsageDescription</key>
+    <string>This app may request access to your photo library to allow you to select images for profile pictures or content sharing.</string>
+
+    <key>NSCameraUsageDescription</key>
+    <string>This app needs access to camera to take photos for profile pictures or content sharing.</string>
+
+    <key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+    <string>This app may request location access to provide location-based features. This permission is required by third-party libraries.</string>
+
+    <key>NSLocationWhenInUseUsageDescription</key>
+    <string>This app may request location access to provide location-based features. This permission is required by third-party libraries.</string>
+    <!-- END OF NEW PRIVACY DESCRIPTIONS -->
+
     <key>CFBundleDevelopmentRegion</key>
     <string>$(DEVELOPMENT_LANGUAGE)</string>
     <key>CFBundleDisplayName</key>

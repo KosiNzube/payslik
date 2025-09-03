@@ -628,7 +628,7 @@ class _FiatWalletDetailPageState extends State<FiatWalletDetailPage> {
 
                   SizedBox(height: 10,),
 
-                  isMobileMoney && mobilemoney_receive==true?ListTile(
+                  mobilemoney_receive==true?ListTile(
                     leading: CircleAvatar(
                       backgroundColor: Colors.orange.shade100,
                       child: Icon(Icons.payment, color: Colors.orange),
@@ -649,7 +649,7 @@ class _FiatWalletDetailPageState extends State<FiatWalletDetailPage> {
                     },
                   ):Container(),
 
-                  isMobileMoney && mobilemoney_receive==true?SizedBox(height: 10,):Container(),
+                  mobilemoney_receive==true?SizedBox(height: 10,):Container(),
 
                   _isCheckingExistingRequest?Center(child: CircularProgressIndicator(color: Colors.black,strokeWidth: 1.5,),) :_hasExistingRequest==false?  ListTile(
                     leading: CircleAvatar(
@@ -757,7 +757,7 @@ class _FiatWalletDetailPageState extends State<FiatWalletDetailPage> {
                   SizedBox(height: 24,),
 
 
-                  isMobileMoney &&mobilemoney_send==true && currency.toUpperCase() != "NGN"?ListTile(
+                  mobilemoney_send==true && currency.toUpperCase() != "NGN"?ListTile(
                     leading: CircleAvatar(
                       backgroundColor: Colors.blue.shade100,
                       child: Icon(Icons.credit_card, color: Colors.blue),
