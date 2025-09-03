@@ -1,4 +1,4 @@
-package com.sonscms.gb;
+package com.faithblez.gb;
 
 
 import io.flutter.embedding.android.FlutterFragmentActivity;
