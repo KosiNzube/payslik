@@ -1,12 +1,22 @@
 import 'dart:convert';
 import 'dart:async';
+import 'package:flag/flag_enum.dart';
+import 'package:flag/flag_widget.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:gobeller/newdesigns/TradingAgentConfigScreen.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
+import 'package:persistent_bottom_nav_bar/persistent_bottom_nav_bar.dart';
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:gobeller/utils/routes.dart';
 import 'package:gobeller/controller/CacVerificationController.dart';
+
+import '../../WalletProviders/General_Wallet_Provider.dart';
+import '../../newdesigns/BuyCarbonCoinPage.dart';
+import '../../newdesigns/CarbonCoin.dart';
 
 class MoreMenuPage extends StatefulWidget {
   const MoreMenuPage({super.key});
@@ -97,6 +107,7 @@ class _MoreMenuPageState extends State<MoreMenuPage> {
     bool isBNPLEnabled = false;
     bool isCustomerMgtEnabled = false;
     bool isTarget_Savings_Enabled=false;
+    bool Carboncoin=false;
 
     if (orgJson != null) {
       final orgData = json.decode(orgJson);
@@ -107,6 +118,7 @@ class _MoreMenuPageState extends State<MoreMenuPage> {
       isBNPLEnabled = orgData['data']?['organization_subscribed_features']?['properties-mgt'] ?? false;
       isCustomerMgtEnabled = orgData['data']?['organization_subscribed_features']?['customers-mgt'] ?? false;
       isTarget_Savings_Enabled = orgData['data']?['organization_subscribed_features']?['target-saving-mgt'] ?? false;
+      Carboncoin=orgData['data']?['organization_subscribed_features']?['customized-currency-mgt'] ?? false;
 
     }
     // Add individual wallet transfer icon
@@ -129,6 +141,13 @@ class _MoreMenuPageState extends State<MoreMenuPage> {
         cards.add(_buildMenuCard(context, icon: Icons.business, label: "Corporate", route: Routes.corporate, index: index++));
       }
     }
+
+    if(Carboncoin){
+      cards.add(_buildMenuCard(context, icon: Icons.token, label: "Carbon Coin", route: Routes.corporate, index: index++));
+
+    }
+
+
     // Only show VTU-related menus if vtu-mgt is enabled
     if (isVtuEnabled) {
       if (_menuItems['display-electricity-menu'] == true) {
@@ -188,6 +207,166 @@ class _MoreMenuPageState extends State<MoreMenuPage> {
 
     return cards;
   }
+  /*
+  void _showCarbonOptions(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (BuildContext context) {
+        return Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                "Carbon Coin",
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 10),
+
+              // Wallet to Wallet Transfer option
+              _TransferOptionTile(
+                icon: Icons.transgender_sharp,
+                title: "Buy Carbon Coin",
+                color: Colors.black87,
+                onTap: () {
+                  Navigator.pop(context);
+                  PersistentNavBarNavigator.pushNewScreenWithRouteSettings(
+                    context,
+                    settings: const RouteSettings(name: '/airtime'),
+                    screen: BuyAirtimePage(),
+                    withNavBar: true,
+                  );
+                },
+              ),
+              // Wallet to Bank Transfer option
+
+              const SizedBox(height: 10),
+
+              _TransferOptionTile(
+                icon: Icons.sell_outlined,
+                title: "Sell Carbon Coin",
+                color: Colors.black87,
+                onTap: () {
+                  Navigator.pop(context);
+                  PersistentNavBarNavigator.pushNewScreenWithRouteSettings(
+                    context,
+                    settings: const RouteSettings(name: '/data_purchase'),
+                    screen:  DataPurchasePage(),
+                    withNavBar: true,
+                  );
+                },
+              ),
+              const SizedBox(height: 10),
+
+              _TransferOptionTile(
+                icon: Icons.person_add_alt_1_outlined,
+                title: "Become an Agent",
+                color: Colors.black87,
+                onTap: () {
+                  Navigator.pop(context);
+                  PersistentNavBarNavigator.pushNewScreenWithRouteSettings(
+                    context,
+                    settings: const RouteSettings(name: '/electric'),
+                    screen:  ElectricityPaymentPage(),
+                    withNavBar: true,
+                  );
+                },
+              ),
+
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+
+   */
+
+  Widget _buildCurrencyIcon(String currencyCode) {
+    switch (currencyCode) {
+    // Nigerian Naira
+      case "NGN":
+        return Flag.fromCode(FlagsCode.NG, height: 18, width: 18);
+
+    // West African CFA franc
+      case "XOF":
+        return Flag.fromCode(FlagsCode.EC, height: 18, width: 18); // Using Ivory Coast flag for XOF
+
+    // Central African CFA franc
+      case "XAF":
+        return Flag.fromCode(FlagsCode.CM, height: 18, width: 18); // Using Cameroon flag for XAF
+
+    // Congolese franc
+      case "CDF":
+        return Flag.fromCode(FlagsCode.CD, height: 18, width: 18);
+
+    // Ghanaian cedi
+      case "GHS":
+        return Flag.fromCode(FlagsCode.GH, height: 18, width: 18);
+
+    // Kenyan shilling
+      case "KES":
+        return Flag.fromCode(FlagsCode.KE, height: 18, width: 18);
+
+    // Lesotho loti
+      case "LSL":
+        return Flag.fromCode(FlagsCode.LS, height: 18, width: 18);
+
+    // Malawian kwacha
+      case "MWK":
+        return Flag.fromCode(FlagsCode.MW, height: 18, width: 18);
+
+    // Mozambican metical
+      case "MZN":
+        return Flag.fromCode(FlagsCode.MZ, height: 18, width: 18);
+
+    // Rwandan franc
+      case "RWF":
+        return Flag.fromCode(FlagsCode.RW, height: 18, width: 18);
+
+    // Sierra Leonean leone
+      case "SLL":
+        return Flag.fromCode(FlagsCode.SL, height: 18, width: 18);
+
+    // Tanzanian shilling
+      case "TZS":
+        return Flag.fromCode(FlagsCode.TZ, height: 18, width: 18);
+
+    // Ugandan shilling
+      case "UGX":
+        return Flag.fromCode(FlagsCode.UG, height: 18, width: 18);
+
+    // Zambian kwacha
+      case "ZMW":
+        return Flag.fromCode(FlagsCode.ZM, height: 18, width: 18);
+
+    // Existing logic for global currencies
+      case "USD":
+        return Flag.fromCode(FlagsCode.US, height: 18, width: 18);
+      case "GBP":
+        return Flag.fromCode(FlagsCode.GB_ENG, height: 18, width: 18);
+      case "EUR":
+        return Flag.fromCode(FlagsCode.EU, height: 18, width: 18);
+      case "CAD":
+        return Flag.fromCode(FlagsCode.CA, height: 18, width: 18);
+
+    // Crypto
+      case "USDT":
+        return Image.asset('assets/tether.png', height: 18, width: 18);
+      case "USDC":
+        return Image.asset('assets/usdc.png', height: 18, width: 18);
+      case "CBC":
+        return Image.asset('assets/carbon.png', height: 18, width: 18);
+
+    // Default fallback
+      default:
+        return Text(currencyCode);
+    }
+
+  }
+
 
   Widget _buildMenuCard(
       BuildContext context, {
@@ -196,13 +375,132 @@ class _MoreMenuPageState extends State<MoreMenuPage> {
         String? route,
         required int index,
       }) {
+
+    final provider = Provider.of<GeneralWalletProvider>(context, listen: false);
+
+
     return GestureDetector(
 
       onTap: () async {
         // Add haptic feedback for iOS-like experience
         HapticFeedback.lightImpact();
+       if(label=="Carbon Coin"){
+         showModalBottomSheet(
+           context: context,
+           backgroundColor: Colors.transparent,
+           isScrollControlled: true,
+           builder: (context) => DraggableScrollableSheet(
+             initialChildSize: 0.6,
+             minChildSize: 0.3,
+             maxChildSize: 0.9,
+             builder: (context, scrollController) => Container(
+               decoration: BoxDecoration(
+                 color: Colors.white,
+                 borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+               ),
+               child: Column(
+                 children: [
+                   // Drag handle
+                   Container(
+                     width: 40,
+                     height: 4,
+                     margin: const EdgeInsets.only(top: 12, bottom: 8),
+                     decoration: BoxDecoration(
+                       color: Colors.white.withOpacity(0.3),
+                       borderRadius: BorderRadius.circular(2),
+                     ),
+                   ),
+                   // Title
+                   Padding(
+                     padding: const EdgeInsets.all(20),
+                     child: Text(
+                       'Select Wallet',
+                       style: GoogleFonts.poppins(
+                         color: Colors.black,
+                         fontSize: 18,
+                         fontWeight: FontWeight.bold,
+                       ),
+                     ),
+                   ),
+                   // Scrollable wallet list
+                   Expanded(
+                     child: ListView.builder(
+                       controller: scrollController,
+                       padding: const EdgeInsets.only(bottom: 20),
+                       itemCount: provider.fiatWallets.length,
+                       itemBuilder: (context, index) {
+                         final w = provider.fiatWallets[index];
 
-        if (label == "Corporate Account") {
+                         return Container(
+                           decoration: BoxDecoration(
+                             borderRadius: BorderRadius.circular(10),
+                             color: Colors.white70,
+                             border: Border.all(color: Colors.black),
+                           ),
+                           margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                           child: ListTile(
+                             contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                             leading: _buildCurrencyIcon(w['currency_code']),
+                             title: Column(
+                               mainAxisAlignment: MainAxisAlignment.start,
+                               crossAxisAlignment: CrossAxisAlignment.start,
+                               children: [
+                                 Text(
+                                   w['currency_name'] ?? "---",
+                                   style: GoogleFonts.poppins(
+                                     color: Colors.black,
+                                     fontSize: 11.5,
+                                     fontWeight: FontWeight.w600,
+                                   ),
+                                 ),
+                                 Row(
+                                   children: [
+                                     Text(
+                                       w['currency'] ?? "---",
+                                       style: GoogleFonts.inter(
+                                         color: Colors.black,
+                                         fontSize: 17,
+                                         fontWeight: FontWeight.w600,
+                                       ),
+                                     ),
+                                     const SizedBox(width: 8),
+                                     Text(
+                                       NumberFormat("#,##0.00").format(w["balance"] ?? 0.0),
+                                       style: GoogleFonts.poppins(
+                                         color: Colors.black,
+                                         fontSize: 17,
+                                         fontWeight: FontWeight.w600,
+                                       ),
+                                     ),
+                                   ],
+                                 ),
+                               ],
+                             ),
+                             //  trailing: isSelected ? const Icon(Icons.check, color: Colors.black, size: 20) : null,
+                             onTap: () {
+                               //walletProvider.selectWallet(index);
+
+                               Navigator.pushReplacement(
+                                 context,
+                                 MaterialPageRoute(
+                                     builder: (context) => CarbonCoin(wallet: w)),
+                               );
+                             },
+                           ),
+                         );
+                       },
+                     ),
+                   ),
+                 ],
+               ),
+             ),
+           ),
+         );
+
+       }
+
+        else if (label == "Corporate Account") {
           try {
             await _CacVerificationController.fetchWallets();
             final wallets = _CacVerificationController.wallets ?? [];
@@ -613,3 +911,26 @@ class _AdCarouselState extends State<AdCarousel> {
   }
 }
 
+class _TransferOptionTile extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _TransferOptionTile({
+    required this.icon,
+    required this.title,
+    required this.color,
+    required this.onTap,
+    Key? key,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      leading: Icon(icon, color: color),
+      title: Text(title),
+      onTap: onTap,
+    );
+  }
+}

@@ -4,7 +4,9 @@ import 'package:flag/flag_widget.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:gobeller/newdesigns/BuyCarbonCoinPage.dart';
 import 'package:gobeller/newdesigns/SendMoneyScreen.dart';
+import 'package:gobeller/newdesigns/TradingAgentConfigScreen.dart';
 import 'package:intl/intl.dart';
 import 'package:persistent_bottom_nav_bar/persistent_bottom_nav_bar.dart';
 import 'package:provider/provider.dart';
@@ -13,7 +15,10 @@ import 'package:gobeller/utils/routes.dart';
 import 'package:gobeller/controller/CacVerificationController.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../../../DASHBOARD_DEFAULT.dart';
 import '../../../WalletProviders/General_Wallet_Provider.dart';
+import '../../../controller/create_wallet_controller.dart' show CurrencyController;
+import '../../../newdesigns/CarbonCoin.dart';
 import '../../../newdesigns/ReceiveMoneyScreen.dart';
 
 class QuickActionsGrid extends StatefulWidget {
@@ -56,6 +61,8 @@ class _QuickActionsGridState extends State<QuickActionsGrid> {
   void initState() {
     super.initState();
     _loadSecondaryColor();
+
+    _loadCurrencies();
 
     _loadSettingsAndMenus();
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -129,6 +136,7 @@ class _QuickActionsGridState extends State<QuickActionsGrid> {
     bool isBNPLEnabled = false;
     bool isCustomerMgtEnabled = false;
     bool isMobileMoney=false;
+    bool Carboncoin=false;
 
 
     if (orgJson != null) {
@@ -143,8 +151,16 @@ class _QuickActionsGridState extends State<QuickActionsGrid> {
       isCustomerMgtEnabled = orgData['data']?['organization_subscribed_features']?['customers-mgt'] ?? false;
 
       isMobileMoney=orgData['data']?['organization_subscribed_features']?['cross-border-payment-mgt'] ?? false;
+
+      Carboncoin=orgData['data']?['organization_subscribed_features']?['customized-currency-mgt'] ?? false;
+
     }
     // Add individual wallet transfer icon
+
+
+    if (_menuItems['can-create-fx-wallet'] == true) {
+      cards.add(_buildMenuCard(context, icon: CupertinoIcons.add, label: "Add Wallet", route: Routes.corporate, index: index++));
+    }
 
     if (isCustomerMgtEnabled) {
 
@@ -167,6 +183,12 @@ class _QuickActionsGridState extends State<QuickActionsGrid> {
       if (_menuItems['display-corporate-account-menu'] == true) {
         cards.add(_buildMenuCard(context, icon: Icons.business_center, label: "Corporate", route: Routes.corporate, index: index++));
       }
+    }
+
+
+    if(Carboncoin){
+      cards.add(_buildMenuCard(context, icon: Icons.token, label: "Carbon Coin", route: Routes.corporate, index: index++));
+
     }
 
     if(isMobileMoney){
@@ -248,6 +270,7 @@ class _QuickActionsGridState extends State<QuickActionsGrid> {
   }
 
 
+
   Widget _buildCurrencyIcon(String currencyCode) {
     switch (currencyCode) {
     // Nigerian Naira
@@ -321,14 +344,294 @@ class _QuickActionsGridState extends State<QuickActionsGrid> {
         return Image.asset('assets/tether.png', height: 18, width: 18);
       case "USDC":
         return Image.asset('assets/usdc.png', height: 18, width: 18);
-
+      case "CBC":
+        return Image.asset('assets/carbon.png', height: 18, width: 18);
     // Default fallback
       default:
         return Text(currencyCode);
     }
 
   }
+  List<dynamic> currencies = [];
+  bool isCurrencyLoading = true;
 
+  bool isCreatingWallet = false;
+  Future<void> _loadCurrencies() async {
+    try {
+      if (!mounted) return;
+      setState(() => isCurrencyLoading = true);
+
+
+
+      final response = await CurrencyController.fetchCurrencies();
+      if (response != null) {
+        setState(() => currencies = response);
+      }
+    } catch (e) {
+      debugPrint("Failed to load currencies: $e");
+    } finally {
+      if (!mounted) return;
+      setState(() => isCurrencyLoading = false);
+    }
+  }
+  Widget _buildDropdown({
+    required String label,
+    required List<DropdownMenuItem<String>> items,
+    String? value,
+    void Function(String?)? onChanged,
+  }) {
+    return DropdownButtonFormField<String>(
+      isExpanded: true,
+      decoration: InputDecoration(
+        labelText: label,
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+      ),
+      items: items,
+      value: value,
+      onChanged: onChanged,
+    );
+  }
+
+  String selectedCurrencyId = '';
+
+  String selectedAccountType = 'internal-account';
+
+  /*
+  void _showCarbonOptions(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (BuildContext context) {
+        return Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                "Carbon Coin",
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 10),
+
+              // Wallet to Wallet Transfer option
+              _TransferOptionTile(
+                icon: Icons.transgender_sharp,
+                title: "Buy Carbon Coin",
+                color: Colors.black87,
+                onTap: () {
+                  Navigator.pop(context);
+                  PersistentNavBarNavigator.pushNewScreenWithRouteSettings(
+                    context,
+                    settings: const RouteSettings(name: '/airtime'),
+                    screen: BuyAirtimePage(),
+                    withNavBar: true,
+                  );
+                },
+              ),
+              // Wallet to Bank Transfer option
+
+              const SizedBox(height: 10),
+
+              _TransferOptionTile(
+                icon: Icons.sell_outlined,
+                title: "Sell Carbon Coin",
+                color: Colors.black87,
+                onTap: () {
+                  Navigator.pop(context);
+                  PersistentNavBarNavigator.pushNewScreenWithRouteSettings(
+                    context,
+                    settings: const RouteSettings(name: '/data_purchase'),
+                    screen:  DataPurchasePage(),
+                    withNavBar: true,
+                  );
+                },
+              ),
+              const SizedBox(height: 10),
+
+              _TransferOptionTile(
+                icon: Icons.person_add_alt_1_outlined,
+                title: "Become an Agent",
+                color: Colors.black87,
+                onTap: () {
+                  Navigator.pop(context);
+                  PersistentNavBarNavigator.pushNewScreenWithRouteSettings(
+                    context,
+                    settings: const RouteSettings(name: '/electric'),
+                    screen:  ElectricityPaymentPage(),
+                    withNavBar: true,
+                  );
+                },
+              ),
+
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+
+   */
+
+
+
+
+  void _createNewWallet(BuildContext context) {
+    if (isCurrencyLoading) {
+
+      snacklen("Please wait, loading options...");
+
+
+      return;
+    }
+
+    showDialog(
+      context: context,
+      barrierDismissible: !isCreatingWallet,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (context, setStateDialog) {
+            return Stack(
+              children: [
+                AlertDialog(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  title: const Text(
+                    "Add New Wallet",
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  contentPadding: const EdgeInsets.fromLTRB(24, 20, 24, 10),
+                  content: SingleChildScrollView(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        _buildDropdown(
+                          label: "Account Type",
+                          items: const [
+                            DropdownMenuItem(
+                              value: "internal-account",
+                              child: Text("Internal Account"),
+                            ),
+                          ],
+                          value: "internal-account",
+                          onChanged: null,
+                        ),
+                        const SizedBox(height: 20),
+
+                        isCurrencyLoading
+                            ? const Center(child: CircularProgressIndicator())
+                            : _buildDropdown(
+                          label: "Currency",
+                          items: currencies.map<DropdownMenuItem<String>>((currency) {
+                            return DropdownMenuItem<String>(
+                              value: currency["id"],
+                              child: Text(
+                                currency["name"],
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            );
+                          }).toList(),
+                          value: selectedCurrencyId.isNotEmpty ? selectedCurrencyId : null,
+                          onChanged: (value) {
+                            setStateDialog(() {
+                              selectedCurrencyId = value!;
+                            });
+                          },
+                        ),
+                        const SizedBox(height: 20),
+
+
+
+
+                      ],
+                    ),
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      style: TextButton.styleFrom(
+                        foregroundColor: Colors.grey[700],
+                      ),
+                      child: const Text("Cancel"),
+                    ),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.black,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      ),
+                      onPressed: isCreatingWallet
+                          ? null
+                          : () async {
+                        if (selectedCurrencyId.isEmpty) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text("Please fill all required fields.")),
+                          );
+                          return;
+                        }
+
+                        final requestBody = {
+                          "account_type": "internal-account",
+                          "currency_id": selectedCurrencyId,
+                        };
+
+                        setStateDialog(() => isCreatingWallet = true);
+
+                        try {
+                          final result = await CurrencyController.createWallet(requestBody);
+
+                          if (result["status"] == "success" || result["status"] == true) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text("Wallet added successfully.")),
+                            );
+
+                            setState(() {
+                              selectedCurrencyId = '';
+                              selectedAccountType = 'internal-account';
+                            });
+
+                            Navigator.of(context).pop();
+                          } else {
+                            final errorMsg = result["message"] ?? "Something went wrong.";
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text(errorMsg)),
+                            );
+                          }
+                        } catch (e) {
+                          final errorMsg = e.toString().replaceFirst("Exception: ", "");
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text(errorMsg)),
+                          );
+                        } finally {
+                          setStateDialog(() => isCreatingWallet = false);
+                        }
+                      },
+                      child:  Text("Add Wallet",style: TextStyle(color: Colors.white),),
+                    ),
+                  ],
+                ),
+                if (isCreatingWallet)
+                  Positioned.fill(
+                    child: Container(
+                      color: Colors.black.withOpacity(0.3),
+                      child: const Center(child: CircularProgressIndicator()),
+                    ),
+                  ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
 
 
   Widget _buildMenuCard(
@@ -463,6 +766,12 @@ class _QuickActionsGridState extends State<QuickActionsGrid> {
           );
 
         }
+        else if(label=="Add Wallet"){
+          _createNewWallet(context);
+
+        }
+
+
         else if(label=="Receive Momo"){
           showModalBottomSheet(
             context: context,
@@ -578,6 +887,122 @@ class _QuickActionsGridState extends State<QuickActionsGrid> {
             ),
           );
         }
+        else if(label=="Carbon Coin"){
+          showModalBottomSheet(
+            context: context,
+            backgroundColor: Colors.transparent,
+            isScrollControlled: true,
+            builder: (context) => DraggableScrollableSheet(
+              initialChildSize: 0.6,
+              minChildSize: 0.3,
+              maxChildSize: 0.9,
+              builder: (context, scrollController) => Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                ),
+                child: Column(
+                  children: [
+                    // Drag handle
+                    Container(
+                      width: 40,
+                      height: 4,
+                      margin: const EdgeInsets.only(top: 12, bottom: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.3),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                    // Title
+                    Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: Text(
+                        'Select Wallet',
+                        style: GoogleFonts.poppins(
+                          color: Colors.black,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    // Scrollable wallet list
+                    Expanded(
+                      child: ListView.builder(
+                        controller: scrollController,
+                        padding: const EdgeInsets.only(bottom: 20),
+                        itemCount: provider.fiatWallets.length,
+                        itemBuilder: (context, index) {
+                          final w = provider.fiatWallets[index];
+
+                          return Container(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(10),
+                              color: Colors.white70,
+                              border: Border.all(color: Colors.black),
+                            ),
+                            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                            child: ListTile(
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              leading: _buildCurrencyIcon(w['currency_code']),
+                              title: Column(
+                                mainAxisAlignment: MainAxisAlignment.start,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    w['currency_name'] ?? "---",
+                                    style: GoogleFonts.poppins(
+                                      color: Colors.black,
+                                      fontSize: 11.5,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  Row(
+                                    children: [
+                                      Text(
+                                        w['currency'] ?? "---",
+                                        style: GoogleFonts.inter(
+                                          color: Colors.black,
+                                          fontSize: 17,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        NumberFormat("#,##0.00").format(w["balance"] ?? 0.0),
+                                        style: GoogleFonts.poppins(
+                                          color: Colors.black,
+                                          fontSize: 17,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                              //  trailing: isSelected ? const Icon(Icons.check, color: Colors.black, size: 20) : null,
+                              onTap: () {
+                                //walletProvider.selectWallet(index);
+
+                                Navigator.pushReplacement(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (context) => CarbonCoin(wallet: w)),
+                                );
+
+                              },
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+
+        }
 
         else if (label == "Corporate Account") {
           try {
@@ -665,6 +1090,30 @@ class _QuickActionsGridState extends State<QuickActionsGrid> {
         childAspectRatio: 0.9,
         children: _menuCards,
       ),
+    );
+  }
+}
+
+class _TransferOptionTile extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _TransferOptionTile({
+    required this.icon,
+    required this.title,
+    required this.color,
+    required this.onTap,
+    Key? key,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      leading: Icon(icon, color: color),
+      title: Text(title),
+      onTap: onTap,
     );
   }
 }

@@ -27,7 +27,44 @@ class WalletList extends StatefulWidget {
 
 class _WalletListState extends State<WalletList> {
 
+  Color _secondaryColor=Color(0xFFFF9800);
 
+  Future<void> _loadPrimaryColorAndLogo() async {
+    final prefs = await SharedPreferences.getInstance();
+    final settingsJson = prefs.getString('appSettingsData');
+
+    if (settingsJson != null) {
+      try {
+        final settings = json.decode(settingsJson);
+        final data = settings['data'] ?? {};
+
+        setState(() {
+          final secondaryColorHex = data['customized-app-secondary-color'];
+
+
+
+          _secondaryColor = secondaryColorHex != null
+              ? Color(int.parse(secondaryColorHex.replaceAll('#', '0xFF')))
+              : _secondaryColor;
+
+
+        });
+      } catch (_) {
+        // If there's an error parsing, use default colors
+        setState(() {
+          _secondaryColor = _secondaryColor;
+        });
+      }
+    }
+  }
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+
+    _loadPrimaryColorAndLogo();
+  }
   @override
   Widget build(BuildContext context) {
     return Consumer<GeneralWalletProvider>(
@@ -90,7 +127,10 @@ class _WalletListState extends State<WalletList> {
                   borderRadius: BorderRadius.circular(7),
 
                   color:  Colors.white,
-                  border: Border.all(color: Colors.grey.shade200),
+                  border: Border.all(
+                    color: _secondaryColor,
+                    width: 1,
+                  ),
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withOpacity(0.04),
@@ -1432,11 +1472,11 @@ class _CryptoWalletListState extends State<CryptoWalletList> {
             return Container(
               margin: const EdgeInsets.symmetric(vertical: 12),
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(7),
                 color: const Color(0xFFFBFBFB),
                 border: Border.all(
                   color: _secondaryColor,
-                  width: 1.5,
+                  width: 1,
                 ),
                 boxShadow: [
                   BoxShadow(

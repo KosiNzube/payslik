@@ -1144,15 +1144,15 @@ class _DashboardPageState extends State<DashboardY> {
 
                             },
                           ),
-
-                      _buildActionButton(
-                        icon: Icons.north_east,
-                        label: 'Send',
-                        onTap: () {
-                          final wallet = walletProvider.selectedWallet!;
-                          _showTransferOptions(context, wallet);
-                        },
-                      ),
+                      if (_menuItems['display-bank-transfer-menu'] == true||_menuItems['display-wallet-transfer-menu'] == true||_menuItems['display-send-mobile-money'] == true)
+                          _buildActionButton(
+                            icon: Icons.north_east,
+                            label: 'Send',
+                            onTap: () {
+                              final wallet = walletProvider.selectedWallet!;
+                              _showTransferOptions(context, wallet);
+                            },
+                          ),
 
                       if (_menuItems['display-fiat-crypto-conversion-options'] == true)
                         _buildActionButton(
@@ -1252,6 +1252,8 @@ class _DashboardPageState extends State<DashboardY> {
         return Image.asset('assets/tether.png', height: 18, width: 18);
       case "USDC":
         return Image.asset('assets/usdc.png', height: 18, width: 18);
+      case "CBC":
+        return Image.asset('assets/carbon.png', height: 18, width: 18);
 
     // Default fallback
       default:

@@ -542,6 +542,7 @@ class _DashboardPageState extends State<DashboardPage7G> {
 
 
 
+  /*
   Future<void> _loadAds() async {
     final prefs = await SharedPreferences.getInstance();
     final orgJson = prefs.getString('organizationData');
@@ -582,6 +583,8 @@ class _DashboardPageState extends State<DashboardPage7G> {
     setState(() {});
   }
 
+
+   */
 
   Future<void> _loadAppSettings() async {
     final prefs = await SharedPreferences.getInstance();
@@ -714,6 +717,7 @@ class _DashboardPageState extends State<DashboardPage7G> {
     super.initState();
     _loadPrimaryColorAndLogo();
     _loadAppSettings();
+  //  _loadAds();
     _loadSettingsAndMenus();
     _checkStoredUsername();
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -980,7 +984,17 @@ class _DashboardPageState extends State<DashboardPage7G> {
 
 
                       const SizedBox(height: 2),
-                     // RecommendedSection(),
+
+                      /*
+                      if (_showBanner && _ads.isNotEmpty) ...[
+                        AdCarousel(ads: _ads),
+                        const SizedBox(height: 16),
+                      ],
+
+
+                       */
+
+                      // RecommendedSection(),
                        const QuickActionsGrid(),
 
                       //  _buildGraph(),
@@ -1004,7 +1018,16 @@ class _DashboardPageState extends State<DashboardPage7G> {
 
 
                       const SizedBox(height: 2),
-                       const QuickActionsGrid(),
+
+                      /*
+                      if (_showBanner && _ads.isNotEmpty) ...[
+                        AdCarousel(ads: _ads),
+                        const SizedBox(height: 16),
+                      ],
+
+                       */
+
+                      const QuickActionsGrid(),
 
                     //  RecommendedSection(),
 
@@ -1073,6 +1096,13 @@ class _DashboardPageState extends State<DashboardPage7G> {
 
                       const SizedBox(height: 2),
                       /*
+
+                      if (_showBanner && _ads.isNotEmpty) ...[
+                        AdCarousel(ads: _ads),
+                        const SizedBox(height: 16),
+                      ],
+
+
                       if (_showBanner && _ads.isNotEmpty) ...[
                         AdCarousel(ads: _ads),
                         const SizedBox(height: 16),
@@ -1208,12 +1238,15 @@ class _DashboardPageState extends State<DashboardPage7G> {
                     const SizedBox(height: 2),
 
                     /*
+
                     if (_showBanner && _ads.isNotEmpty) ...[
                       AdCarousel(ads: _ads),
                       const SizedBox(height: 16),
                     ],
 
+
                      */
+
 
                   //  RecommendedSection(),
 
