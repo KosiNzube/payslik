@@ -479,8 +479,25 @@ class GeneralWalletProvider extends ChangeNotifier {
         debugPrint("⚠️ Failed to parse provider_metadata: $e");
       }
 
+      // Extract bank information
+      final bankInfo = wallet["bank"];
+      String bankCode = "N/A";
+      String bankShortCode = "N/A";
+      String bankSwiftCode = "";
+      String bankBranchCode = "N/A";
+      String bankAddress = "";
+
+      if (bankInfo is Map<String, dynamic>) {
+        bankCode = bankInfo["code"]?.toString() ?? "N/A";
+        bankShortCode = bankInfo["short_code"]?.toString() ?? "N/A";
+        bankSwiftCode = bankInfo["swift_code"]?.toString() ?? "";
+        bankBranchCode = bankInfo["branch_code"]?.toString() ?? "N/A";
+        bankAddress = bankInfo["address"]?.toString() ?? "";
+      }
+
       return {
         "type": wallet["ownership_type"] ?? "Normal wallet",
+        "id": wallet["id"],
         "currency_name": wallet["currency"] is Map && wallet["currency"]?["name"] != null
             ? wallet["currency"]["name"]
             : "Unknown Currency",
@@ -494,7 +511,11 @@ class GeneralWalletProvider extends ChangeNotifier {
         "bank_name": wallet["bank"] is Map && wallet["bank"]?["name"] != null
             ? wallet["bank"]["name"]
             : "Unknown Bank",
-        "bank_code": "N/A",
+        "bank_code": bankCode,
+        "bank_short_code": bankShortCode,
+        "bank_swift_code": bankSwiftCode,
+        "bank_branch_code": bankBranchCode,
+        "bank_address": bankAddress,
         "currency_code": wallet["currency"] is Map && wallet["currency"]?["code"] != null
             ? wallet["currency"]["code"]
             : "NGN",
@@ -509,7 +530,6 @@ class GeneralWalletProvider extends ChangeNotifier {
       };
     }).toList().reversed.toList();
   }
-
   // Switch between different wallet modes
   Future<void> switchToAllWallets() async {
     if (_currentMode != WalletMode.all) {

@@ -68,7 +68,7 @@ class _FixedDepositHistoryPageState extends State<FixedDepositHistoryPage> {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
-        title: const Text('Investment History'),
+        title:  Text('Investment History',style:TextStyle(color:Colors.white)),
         centerTitle: true,
         backgroundColor: primaryColor,
         elevation: 0,
@@ -226,7 +226,7 @@ class _FixedDepositHistoryPageState extends State<FixedDepositHistoryPage> {
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
-                          contract['ref_code'] ?? 'Unknown',
+                          contract['status']['label'] ?? 'Unknown',
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 12,

@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:gobeller/newdesigns/FundCard.dart';
 import 'package:gobeller/newdesigns/SendMoneyScreen.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:persistent_bottom_nav_bar/persistent_bottom_nav_bar.dart';
 import 'package:provider/provider.dart';
@@ -560,18 +561,26 @@ class _FiatWalletDetailPageState extends State<FiatWalletDetailPage> {
                         const SizedBox(height: 24),
 
                         // Account Number Field
-                        _buildDetailRowX(
-                          label:accountNumber.length<13? 'Account number':"Wallet Address",
-                          value: accountNumber.length<13? accountNumber:accountNumber.substring(0,10)+"..."+getLastFourDigits(accountNumber),
+                        currency.toUpperCase() == "USD" ||currency.toUpperCase() == "EUR"||currency.toUpperCase() == "GBP"||currency.toUpperCase() == "CAD"?Container() :Column(
+                          children: [
+                            _buildDetailRowX(
+                              label:accountNumber.length<13? 'Account number':"Wallet Address",
+                              value: accountNumber.length<13? accountNumber:accountNumber.substring(0,10)+"..."+getLastFourDigits(accountNumber),
+                            ),
+                            const SizedBox(height: 24),
+
+
+                            _buildDetailRowX(
+                              label:"Bank name",
+                              value: bankName,
+                            ),
+                          ],
                         ),
 
-                        const SizedBox(height: 24),
+
+                        _existingRequestData != null?_buildRequestStatus():Container(),
 
 
-                        _buildDetailRowX(
-                          label:"Bank name",
-                          value: bankName,
-                        ),
                       ],
                     ),
                   ),
@@ -584,8 +593,10 @@ class _FiatWalletDetailPageState extends State<FiatWalletDetailPage> {
             const SizedBox(height: 24),
 
 
+          //  currency.toUpperCase() == "USD" ||currency.toUpperCase() == "EUR"||currency.toUpperCase() == "GBP" || (mobilemoney_receive==true && currency.toUpperCase() != "NGN") ?  Container(
             currency.toUpperCase() == "USD" ||currency.toUpperCase() == "EUR"||currency.toUpperCase() == "GBP" || (mobilemoney_receive==true && currency.toUpperCase() != "NGN") ?  Container(
-              width: double.infinity,
+
+            width: double.infinity,
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
                 color: Colors.white,
@@ -674,10 +685,13 @@ class _FiatWalletDetailPageState extends State<FiatWalletDetailPage> {
 
                   const SizedBox(height: 24),
 
+                  /*
                   _existingRequestData != null?_buildRequestStatus():Container(),
 
                   SizedBox(height: 24,),
 
+
+                   */
 
 
 
@@ -870,6 +884,81 @@ class _FiatWalletDetailPageState extends State<FiatWalletDetailPage> {
     );
   }
 
+  Widget _buildDetailRowQ({required String label, required String value}) {
+    final orgController = Provider.of<OrganizationController>(context, listen: false);
+    final orgData = orgController.organizationData?['data'] ?? {};
+    final name = orgData['short_name'] ?? '---';
+
+    if(value.toLowerCase()=="unknown bank"){
+      setState(() {
+        value=name;
+      });
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+            color: Colors.grey[600],
+          ),
+        ),
+        const SizedBox(height: 8),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+          decoration: BoxDecoration(
+            color: Colors.grey[50],
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: Colors.grey[200]!,
+              width: 1,
+            ),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                value.length>22?value.substring(0,22)+"...":value,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w400,
+                  color: Colors.black,
+                ),
+              ),
+              GestureDetector(
+                onTap: () {
+                  Clipboard.setData(ClipboardData(text: value));
+
+                  SmartDialog.showToast(label+" copied");
+                },
+                child: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: const Icon(
+                    Icons.copy,
+                    color: Colors.black,
+                    size: 14,
+                  ),
+                ),
+              ),
+
+            ],
+          ),
+        ),
+
+
+      ],
+    );
+  }
+
+
   Widget _buildRequestStatus() {
     // Add proper null check first
     if (_existingRequestData == null) {
@@ -882,81 +971,58 @@ class _FiatWalletDetailPageState extends State<FiatWalletDetailPage> {
     final currency = data['currency'] ?? {};
     final wallet = data['wallet'];
 
-    return Card(
-      elevation: 0,
-      child: Padding(
-        padding: EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header - Fix string concatenation
-            Container(
-              width: double.infinity,
-              padding: EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.green.shade50,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.green.shade200),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    '${widget.wallet["currency_code"] ?? "Fiat"} Account', // Fixed concatenation
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.green.shade700,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            SizedBox(height: 16),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Header - Fix string concatenation
 
 
 
-            // Show different content based on wallet status
-            if (wallet != null) ...[
-              // Active Account - Show wallet details
-              _buildActiveAccountSection(data, wallet, currency),
-            ] else ...[
-              // Pending Request - Show request details
-              _buildPendingRequestSection(data, userRequestData),
-            ],
 
-            SizedBox(height: 16),
+        // Show different content based on wallet status
+        if (wallet != null) ...[
+          // Active Account - Show wallet details
+          widget.wallet["currency_code"]=="USD"?_buildActiveAccountSectionUSD(data, wallet, currency):  _buildActiveAccountSection(data, wallet, currency),
+        ] else ...[
+          // Pending Request - Show request details
+          _buildPendingRequestSection(data, userRequestData),
+        ],
 
-            // Timeline (always show)
-            _buildTimelineSection(data),
-            // ... rest of your code
-          ],
-        ),
-      ),
+
+        /*
+        SizedBox(height: 16),
+
+        // Timeline (always show)
+        _buildTimelineSection(data),
+
+         */
+        // ... rest of your code
+      ],
     );
   }
   Widget _buildTimelineSection(Map<String, dynamic> data) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildSectionTitle('Timeline'),
 
         // Request Created
-        _buildDetailRow(
-            'Request Submitted',
-            _formatDate(data['created_at'])
+
+
+        _buildDetailRowX(
+          label: 'Request Submitted',
+          value: _formatDate(data['created_at']) ?? 'N/A',
         ),
 
 
-
+        SizedBox(height: 24),
 
 
         // For active accounts, show wallet creation date
         if (data['wallet'] != null) ...[
-          _buildDetailRow(
-              'Account Activated',
-              _formatDate(data['wallet']['created_at'])
+
+          _buildDetailRowX(
+            label: 'Account Activated',
+            value:  _formatDate(data['wallet']['created_at']) ?? 'N/A',
           ),
         ],
       ],
@@ -977,28 +1043,301 @@ class _FiatWalletDetailPageState extends State<FiatWalletDetailPage> {
         .map((word) => word.isEmpty ? '' : word[0].toUpperCase() + word.substring(1).toLowerCase())
         .join(' ');
   }
+
+  Widget _buildActiveAccountSectionUSD(Map<String, dynamic> data, Map<String, dynamic> wallet, Map<String, dynamic> currency) {
+
+
+      final wallet = data['wallet'];
+      final providerMetadata = wallet['provider_metadata'];
+
+      // Safely extract data
+      dynamic rawData;
+      if (providerMetadata is Map) {
+        rawData = providerMetadata['data'];
+      } else if (providerMetadata is String) {
+        final decoded = jsonDecode(providerMetadata);
+        rawData = decoded['data'];
+      } else {
+        print('Unexpected provider_metadata type: ${providerMetadata.runtimeType}');
+      }
+
+      // Ensure rawData is a Map
+      if (rawData is! Map) {
+        print('accountData is not a Map: ${rawData.runtimeType}');
+      }
+
+      final accountData = rawData as Map<String, dynamic>;
+
+// Primary account (ACH)
+    final primaryAccount = {
+      'accountNumber': accountData['accountNumber'],
+      'bankName': accountData['bankName'],
+      'bankCode': accountData['bankCode'],
+      'addressableIn': accountData['otherInfo']['addressableIn'], // "ACH"
+      'memo': accountData['otherInfo']['memo'],
+    };
+
+// Alternate accounts array
+    final alternateAccounts = accountData['alternateAccountDetails'] as List;
+
+// Account 1 - SWIFT (Switzerland)
+    final swiftAccount = alternateAccounts[0];
+    final swiftAccountData = {
+      'accountNumber': swiftAccount['accountNumber'],
+      'bankName': swiftAccount['bankName'],
+      'bankCode': swiftAccount['bankCode'],
+      'countryCode': swiftAccount['countryCode'], // "CH"
+      'postalCode': swiftAccount['postalCode'], // "8001"
+      'bankSwiftCode': swiftAccount['otherInfo']['bankSwiftCode'], // "MOCKBICX"
+      'addressableIn': swiftAccount['otherInfo']['addressableIn'], // "SWIFT"
+      'bankAddress': swiftAccount['otherInfo']['bankAddress'],
+      'memo': swiftAccount['otherInfo']['memo'],
+    };
+
+// Account 2 - FEDWIRE (US)
+    final fedwireAccount = alternateAccounts[1];
+    final fedwireAccountData = {
+      'accountNumber': fedwireAccount['accountNumber'],
+      'bankName': fedwireAccount['bankName'],
+      'bankCode': fedwireAccount['bankCode'],
+      'countryCode': fedwireAccount['countryCode'], // "US"
+      'postalCode': fedwireAccount['postalCode'], // "10001"
+      'addressableIn': fedwireAccount['otherInfo']['addressableIn'], // "FEDWIRE"
+      'bankAddress': fedwireAccount['otherInfo']['bankAddress'],
+      'memo': fedwireAccount['otherInfo']['memo'],
+    };
+
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+
+
+        _buildAccountDetails(primaryAccount, 'US Bank Transfer'),
+        SizedBox(height: 24),
+
+        // Tab 2: SWIFT
+        _buildAccountDetails(swiftAccountData, 'International Wire'),
+        SizedBox(height: 24),
+
+        // Tab 3: FEDWIRE
+        _buildAccountDetails(fedwireAccountData, 'US Wire Transfer'),
+
+        // Account Details
+
+
+
+        SizedBox(height: 24),
+
+
+
+
+
+      ],
+    );
+  }
+
+  Widget _buildAccountDetails(Map<String, dynamic> accountData, String type) {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+
+        Text(
+          type,
+          style: GoogleFonts.poppins(
+            fontSize: 18,
+
+            fontWeight: FontWeight.w700,
+            color: Colors.black,
+            letterSpacing: 0.5,
+          ),
+        ),
+        SizedBox(height: 24),
+
+        _buildDetailRowX(
+          label: 'Account Number',
+          value: accountData['accountNumber'] ?? 'N/A',
+        ),
+        SizedBox(height: 24),
+
+        _buildDetailRowX(
+          label: 'Bank Name',
+          value: accountData['bankName'] ?? 'N/A',
+        ),
+        SizedBox(height: 24),
+
+        _buildDetailRowX(
+          label: 'Bank Code',
+          value: accountData['bankCode'] ?? 'N/A',
+        ),
+        SizedBox(height: 24),
+
+        if (type == 'International Wire') ...[
+          _buildDetailRowX(
+            label: 'SWIFT Code',
+            value: accountData['bankSwiftCode'] ?? 'N/A',
+          ),
+          SizedBox(height: 24),
+
+          _buildDetailRowX(
+            label: 'Bank Address',
+            value: accountData['bankAddress'] ?? 'N/A',
+          ),
+          SizedBox(height: 24),
+        ],
+
+        if (type == 'US Wire Transfer') ...[
+          _buildDetailRowX(
+            label: 'Bank Address',
+            value: accountData['bankAddress'] ?? 'N/A',
+          ),
+          SizedBox(height: 24),
+        ],
+
+        _buildDetailRowX(
+          label: 'Transfer Method',
+          value: accountData['addressableIn'] ?? type,
+        ),
+        SizedBox(height: 24),
+
+        _buildDetailRowX(
+          label: 'Reference/Memo',
+          value: accountData['memo'] ?? 'N/A',
+        ),
+      ],
+    );
+  }
+
   Widget _buildActiveAccountSection(Map<String, dynamic> data, Map<String, dynamic> wallet, Map<String, dynamic> currency) {
+
+    Map<String, dynamic> accountData = {
+      'accountNumber': 'N/A',
+      'bankName': 'N/A',
+      'bankCode': 'N/A',
+      'countryCode': 'N/A',
+      'walletProvider': 'N/A',
+      'merchantReference': 'N/A',
+      'iban': 'N/A',
+      'sortCode': 'N/A',
+      'bankSwiftCode': 'N/A',
+      'addressableIn': 'N/A',
+      'bankAddress': 'N/A',
+    };
+
+    if (wallet != null) {
+      final providerMetadata = wallet['provider_metadata'];
+
+      // Safely extract and decode data
+      dynamic rawData;
+      if (providerMetadata is Map) {
+        // Data is already a Map
+        rawData = providerMetadata['data'];
+      } else if (providerMetadata is String) {
+        // Data is JSON string, decode it
+        try {
+          final decoded = jsonDecode(providerMetadata);
+          rawData = decoded['data'];
+        } catch (e) {
+          print('Error decoding provider_metadata JSON: $e');
+          rawData = null;
+        }
+      } else {
+        print('Unexpected provider_metadata type: ${providerMetadata.runtimeType}');
+        rawData = null;
+      }
+
+      // Extract banking details if rawData is valid
+      if (rawData is Map<String, dynamic>) {
+        accountData.addAll({
+          'accountNumber': rawData['accountNumber'] ?? 'N/A',
+          'bankName': rawData['bankName'] ?? 'N/A',
+          'bankCode': rawData['bankCode'] ?? 'N/A',
+          'countryCode': rawData['countryCode'] ?? 'N/A',
+          'walletProvider': rawData['walletProvider'] ?? 'N/A',
+          'merchantReference': rawData['merchantReference'] ?? 'N/A',
+        });
+
+        // Extract otherInfo nested data
+        final otherInfo = rawData['otherInfo'];
+        if (otherInfo is Map<String, dynamic>) {
+          accountData.addAll({
+            'iban': otherInfo['iban'] ?? 'N/A',
+            'sortCode': otherInfo['sortCode'] ?? 'N/A',
+            'bankSwiftCode': otherInfo['bankSwiftCode'] ?? 'N/A',
+            'addressableIn': otherInfo['addressableIn'] ?? 'N/A',
+            'bankAddress': otherInfo['bankAddress'] ?? 'N/A',
+          });
+        }
+      } else {
+        print('rawData is not a valid Map: ${rawData.runtimeType}');
+      }
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Account Details
-        _buildSectionTitle('Account Details'),
-        _buildDetailRow('Account Number', wallet['wallet_number'] ?? 'N/A'),
-        _buildDetailRow('Account Holder', wallet['ownership_label'] ?? 'N/A'),
-        _buildDetailRow('Account Type', _formatOwnershipType(wallet['ownership_type'])),
-        _buildDetailRow('Currency', '${currency['name']} (${currency['symbol']})'),
-        _buildDetailRow('Balance', _formatBalance(wallet['balance'], currency['symbol'])),
-        _buildDetailRow('Status', data['status']['label'] ?? 'Unknown'),
 
-        SizedBox(height: 16),
 
-        // Personal Information (from user_request_data if available)
-        if (data['user_request_data'] != null) ...[
-          _buildSectionTitle('Account Purpose'),
-          _buildDetailRow('Designated Use', data['user_request_data']['account_designations']),
-          _buildDetailRow('Occupation', data['user_request_data']['occupation']),
-          _buildDetailRow('Income Source', _formatIncomeSource(data['user_request_data']['source_of_income'])),
-        ],
+        _buildDetailRowX(
+          label: 'Account Number',
+          value: accountData['accountNumber'] ?? 'N/A',
+        ),
+        SizedBox(height: 24),
+
+
+        _buildDetailRowX(
+          label: 'IBAN',
+          value: accountData['iban'] ?? 'N/A',
+        ),
+        SizedBox(height: 24),
+
+
+
+
+        _buildDetailRowX(
+          label: 'Bank Name',
+          value: accountData['bankName'] ?? 'N/A',
+        ),
+        SizedBox(height: 24),
+
+        _buildDetailRowX(
+          label: 'Bank Code',
+          value: accountData['bankCode'] ?? 'N/A',
+        ),
+        SizedBox(height: 24),
+
+        _buildDetailRowX(
+          label: 'Sort Code',
+          value: accountData['sortCode'] ?? 'N/A',
+        ),
+        SizedBox(height: 24),
+        _buildDetailRowX(
+          label: 'SWIFT Code',
+          value: accountData['bankSwiftCode'] ?? 'N/A',
+        ),
+
+        SizedBox(height: 24),
+        _buildDetailRowX(
+          label: 'Country',
+          value: accountData['countryCode'] ?? 'N/A',
+        ),
+
+        SizedBox(height: 24),
+
+        _buildDetailRowX(
+          label: 'Addressable In',
+          value: accountData['addressableIn'] ?? 'N/A',
+        ),
+        SizedBox(height: 24),
+
+        _buildDetailRowX(
+          label: 'Bank Address',
+          value: accountData['bankAddress'] ?? 'N/A',
+        ),
+        SizedBox(height: 24),
+
       ],
     );
   }
@@ -1008,19 +1347,135 @@ class _FiatWalletDetailPageState extends State<FiatWalletDetailPage> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Request Information
-        _buildSectionTitle('Request Information'),
-        _buildDetailRow('Status', '${data['status']['label']}'),
-        _buildDetailRow('Account Type', _formatAccountType(data['account_type'])),
-        _buildDetailRow('Purpose', userRequestData['account_designations']),
+        SizedBox(height: 24),
 
-        SizedBox(height: 16),
+        _buildDetailRowX(
+          label: 'Status',
+          value: '${data['status']['label']}',
+        ),
+        SizedBox(height: 24),
 
-        // Personal Information
-        _buildSectionTitle('Personal Information'),
-        _buildDetailRow('Occupation', userRequestData['occupation']),
-        _buildDetailRow('Employment', _formatEmploymentStatus(userRequestData['employment_status'])),
-        _buildDetailRow('Income Source', _formatIncomeSource(userRequestData['source_of_income'])),
-        _buildDetailRow('Identification', _formatIdType(userRequestData['means_of_identification_type'])),
+
+        _buildDetailRowX(
+          label: 'Account Type',
+          value: _formatAccountType(data['account_type']),
+        ),
+        SizedBox(height: 24),
+
+        _buildDetailRowX(
+          label: 'Purpose',
+          value: userRequestData['account_designations'],
+        ),
+
+
+        SizedBox(height: 24),
+
+        _buildDetailRowX(
+          label: 'Email',
+          value: data['wallet']['walletable']['email'] ?? 'N/A',
+        ),
+        SizedBox(height: 24),
+
+        _buildDetailRowX(
+          label: 'Phone',
+          value: '${data['wallet']['walletable']['tel_prefix'] ?? ''}${data['wallet']['walletable']['telephone'] ?? ''}',
+        ),
+        SizedBox(height: 24),
+
+        _buildDetailRowX(
+          label: 'Date of Birth',
+          value: data['wallet']['walletable']['date_of_birth'] ?? 'N/A',
+        ),
+        SizedBox(height: 24),
+
+        _buildDetailRowX(
+          label: 'Gender',
+          value: data['wallet']['walletable']['gender']?.toString() ?? 'N/A',
+        ),
+
+        SizedBox(height: 24),
+
+
+        _buildDetailRowX(
+          label: 'Address',
+          value: data['wallet']['walletable']['physical_address'] ?? 'N/A',
+        ),
+
+
+        SizedBox(height: 24),
+
+        // Personal Information (from user_request_data if available)
+        if (data['user_request_data'] != null) ...[
+          _buildDetailRowQ(
+            label: 'Occupation',
+            value: data['user_request_data']['occupation'] ?? 'N/A',
+          ),
+          SizedBox(height: 24),
+
+          _buildDetailRowQ(
+            label: 'Employment Status',
+            value: data['user_request_data']['employment_status']?.toString().replaceAll('_', ' ') ?? 'N/A',
+          ),
+          SizedBox(height: 24),
+
+          _buildDetailRowQ(
+            label: 'Source of Income',
+            value: data['user_request_data']['source_of_income']?.toString().replaceAll('_', ' ') ?? 'N/A',
+          ),
+          SizedBox(height: 24),
+
+          _buildDetailRowQ(
+            label: 'Account Purpose',
+            value: data['user_request_data']['account_designations'] ?? 'N/A',
+          ),
+          SizedBox(height: 24),
+
+          _buildDetailRowX(
+            label: 'ID Type',
+            value: data['user_request_data']['means_of_identification_type']?.toString() ?? 'N/A',
+          ),
+          SizedBox(height: 24),
+
+          _buildDetailRowX(
+            label: 'ID Number',
+            value: data['user_request_data']['means_of_identification_number'] ?? 'N/A',
+          ),
+          SizedBox(height: 24),
+
+          _buildDetailRowX(
+            label: 'Issued Country',
+            value: data['user_request_data']['means_of_identification_issued_country_code'] ?? 'N/A',
+          ),
+          SizedBox(height: 24),
+
+          _buildDetailRowX(
+            label: 'Issue Date',
+            value: data['user_request_data']['means_of_identification_issued_date'] ?? 'N/A',
+          ),
+          SizedBox(height: 24),
+
+          _buildDetailRowX(
+            label: 'Expiration Date',
+            value: data['user_request_data']['means_of_identification_expiration_date'] ?? 'N/A',
+          ),
+          SizedBox(height: 24),
+
+          // Tax Information
+
+          _buildDetailRowX(
+            label: 'Tax Country',
+            value: data['user_request_data']['tax_identity_country'] ?? 'N/A',
+          ),
+          SizedBox(height: 24),
+
+          _buildDetailRowX(
+            label: 'Tax ID Number',
+            value: data['user_request_data']['tax_identity_number'] ?? 'Not Provided',
+          ),
+
+
+
+        ],
       ],
     );
   }

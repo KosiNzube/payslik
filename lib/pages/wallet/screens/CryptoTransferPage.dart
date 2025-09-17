@@ -88,6 +88,10 @@ class _CryptoTransferPageState extends State<CryptoTransferPage> {
   @override
   Widget build(BuildContext context) {
     final currency = widget.wallet["currency_code"] ?? "Crypto";
+    final balance = widget.wallet["balance"]?.toString() ?? "0";
+    final address = widget.wallet["wallet_address"] ?? widget.wallet["wallet_number"] ?? "Unavailable";
+    final network = widget.wallet["currency_network"] ?? "Unknown";
+    final name = widget.wallet["label"] ?? "Unnamed Wallet";
 
     return Scaffold(
       backgroundColor: Colors.grey[50],
@@ -111,6 +115,51 @@ class _CryptoTransferPageState extends State<CryptoTransferPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(32),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: Colors.grey[200]!),
+                ),
+                child: Column(
+                  children: [
+                    Text(
+                      "Current Balance",
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.grey[600],
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      balance,
+                      style: const TextStyle(
+                        fontSize: 32,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black87,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      currency,
+                      style: TextStyle(
+                        fontSize: 18,
+                        color: Colors.grey[600],
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 24),
+
+
+
               // Destination Address
               _buildInputField(
                 controller: _destinationController,

@@ -266,7 +266,7 @@ class _TargetSavingsScreenState extends State<TargetSavingsScreen> {
                                     ),
                                     _buildInfoItem(
                                       'Lock Period',
-                                      '${product['lock_min_period']} - ${product['lock_max_period'] ?? '∞'} Months',
+                                      '${product['lock_min_period']} - ${product['lock_max_period'] ?? '∞'} '+product['saving_recursive_cycle'],
                                       primaryColor,
                                     ),
                                   ],

@@ -115,7 +115,7 @@ class _LoanHistoryPageState extends State<LoanHistoryPage> with SingleTickerProv
     final loanController = Provider.of<LoanController>(context);
 
     return Scaffold(
-      backgroundColor: _tertiaryColor ?? const Color(0xFFF5F5F5),
+      backgroundColor: Colors.white70,
       appBar: AppBar(
         elevation: 0,
         backgroundColor: Colors.transparent,
@@ -247,7 +247,7 @@ class _LoanHistoryPageState extends State<LoanHistoryPage> with SingleTickerProv
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Icon(
-                            Icons.account_balance_wallet,
+                            Icons.wallet,
                             color: _primaryColor ?? Colors.blue,
                             size: 20,
                           ),

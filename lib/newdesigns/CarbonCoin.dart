@@ -4,7 +4,6 @@ import 'package:dropdown_search/dropdown_search.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:gobeller/newdesigns/BuyCarbonCoinPage.dart';
 import 'package:gobeller/newdesigns/TradingAgentConfigScreen.dart';
 import 'package:gobeller/utils/currency_input_formatter.dart';
 import 'package:gobeller/controller/wallet_to_bank_controller.dart';
@@ -13,18 +12,19 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../utils/api_service.dart';
+import 'BuyCarbonCoinPage.dart';
 import 'SellCarbonCoinPage.dart';
 
-class CarbonCoin extends StatefulWidget {
+class SolarCoin extends StatefulWidget {
   final Map<String, dynamic> wallet;
 
-  CarbonCoin({super.key, required this.wallet});
+  SolarCoin({super.key, required this.wallet});
 
   @override
-  State<CarbonCoin> createState() => _CarbonCoinState();
+  State<SolarCoin> createState() => _SolarCoinState();
 }
 
-class _CarbonCoinState extends State<CarbonCoin> {
+class _SolarCoinState extends State<SolarCoin> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _accountNumberController = TextEditingController();
   final TextEditingController _amountController = TextEditingController();
@@ -125,7 +125,7 @@ class _CarbonCoinState extends State<CarbonCoin> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Carbon Coin"),
+        title: const Text("Solar Coin"),
         // actions: [
         //   TextButton.icon(
         //     icon: const Icon(Icons.people_alt_outlined, color: Colors.black),
@@ -255,12 +255,12 @@ class _CarbonCoinState extends State<CarbonCoin> {
                             // Tournaments menu item
                             _buildMenuTile(
                               icon: CupertinoIcons.upload_circle,
-                              title: 'Buy Carbon Coin',
+                              title: 'Buy Solar Coin',
                               onTap: () async {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                      builder: (context) => BuyCarbonCoinPage(wallet: widget.wallet)),
+                                      builder: (context) => BuySolarCoinPage(wallet: widget.wallet)),
                                 );
                               },
                             ),
@@ -275,12 +275,12 @@ class _CarbonCoinState extends State<CarbonCoin> {
                             // Date/Time menu item
                             _buildMenuTile(
                               icon: CupertinoIcons.download_circle,
-                              title: 'Sell Carbon Coin',
+                              title: 'Sell Solar Coin',
                               onTap: () async {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                      builder: (context) => SellCarbonCoinPage(wallet: widget.wallet)),
+                                      builder: (context) => SellSolarCoinPage(wallet: widget.wallet)),
                                 );
 
                                 },

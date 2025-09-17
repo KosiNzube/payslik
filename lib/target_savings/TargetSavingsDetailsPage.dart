@@ -460,7 +460,7 @@ class _TargetSavingsDetailsPageState extends State<TargetSavingsDetailsPage>
               ),
               _buildDetailRow(
                 'Lock Period',
-                '${product['lock_min_period']} - ${product['lock_max_period'] ?? '∞'} months',
+                '${product['lock_min_period']} - ${product['lock_max_period'] ?? '∞'} '+product['saving_recursive_cycle'],
               ),
             ],
           ),

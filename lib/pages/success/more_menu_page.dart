@@ -15,8 +15,9 @@ import 'package:gobeller/utils/routes.dart';
 import 'package:gobeller/controller/CacVerificationController.dart';
 
 import '../../WalletProviders/General_Wallet_Provider.dart';
-import '../../newdesigns/BuyCarbonCoinPage.dart';
 import '../../newdesigns/CarbonCoin.dart';
+import '../../newdesigns/wallet_to_bank_intent.dart';
+import '../../newdesigns/wallet_to_wallet_intent.dart';
 
 class MoreMenuPage extends StatefulWidget {
   const MoreMenuPage({super.key});
@@ -107,7 +108,7 @@ class _MoreMenuPageState extends State<MoreMenuPage> {
     bool isBNPLEnabled = false;
     bool isCustomerMgtEnabled = false;
     bool isTarget_Savings_Enabled=false;
-    bool Carboncoin=false;
+    bool Solarcoin=false;
 
     if (orgJson != null) {
       final orgData = json.decode(orgJson);
@@ -118,32 +119,32 @@ class _MoreMenuPageState extends State<MoreMenuPage> {
       isBNPLEnabled = orgData['data']?['organization_subscribed_features']?['properties-mgt'] ?? false;
       isCustomerMgtEnabled = orgData['data']?['organization_subscribed_features']?['customers-mgt'] ?? false;
       isTarget_Savings_Enabled = orgData['data']?['organization_subscribed_features']?['target-saving-mgt'] ?? false;
-      Carboncoin=orgData['data']?['organization_subscribed_features']?['customized-currency-mgt'] ?? false;
+      Solarcoin=orgData['data']?['organization_subscribed_features']?['customized-currency-mgt'] ?? false;
 
     }
     // Add individual wallet transfer icon
 
 
     if (isCustomerMgtEnabled) {
-      /*
+
       if (_menuItems['display-wallet-transfer-menu'] == true) {
-        cards.add(_buildMenuCard(context, icon: Icons.wallet, label: "Wallet transfer", route: Routes.transfer, index: index++));
+        cards.add(_buildMenuCard(context, icon: Icons.wallet, label: "To Wallet", route: Routes.transfer, index: index++));
       }
 
       // Add individual bank transfer icon
       if (_menuItems['display-bank-transfer-menu'] == true) {
-        cards.add(_buildMenuCard(context, icon: Icons.swap_horiz, label: "Other bank ", route: Routes.bank_transfer, index: index++));
+        cards.add(_buildMenuCard(context, icon: Icons.swap_horiz, label: "To Bank ", route: Routes.bank_transfer, index: index++));
       }
 
-       */
+
 
       if (_menuItems['display-corporate-account-menu'] == true) {
         cards.add(_buildMenuCard(context, icon: Icons.business, label: "Corporate", route: Routes.corporate, index: index++));
       }
     }
 
-    if(Carboncoin){
-      cards.add(_buildMenuCard(context, icon: Icons.token, label: "Carbon Coin", route: Routes.corporate, index: index++));
+    if(Solarcoin){
+      cards.add(_buildMenuCard(context, icon: Icons.token, label: "Solar Coin", route: Routes.corporate, index: index++));
 
     }
 
@@ -208,7 +209,7 @@ class _MoreMenuPageState extends State<MoreMenuPage> {
     return cards;
   }
   /*
-  void _showCarbonOptions(BuildContext context) {
+  void _showSolarOptions(BuildContext context) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -219,7 +220,7 @@ class _MoreMenuPageState extends State<MoreMenuPage> {
             mainAxisSize: MainAxisSize.min,
             children: [
               const Text(
-                "Carbon Coin",
+                "Solar Coin",
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 10),
@@ -227,7 +228,7 @@ class _MoreMenuPageState extends State<MoreMenuPage> {
               // Wallet to Wallet Transfer option
               _TransferOptionTile(
                 icon: Icons.transgender_sharp,
-                title: "Buy Carbon Coin",
+                title: "Buy Solar Coin",
                 color: Colors.black87,
                 onTap: () {
                   Navigator.pop(context);
@@ -245,7 +246,7 @@ class _MoreMenuPageState extends State<MoreMenuPage> {
 
               _TransferOptionTile(
                 icon: Icons.sell_outlined,
-                title: "Sell Carbon Coin",
+                title: "Sell Solar Coin",
                 color: Colors.black87,
                 onTap: () {
                   Navigator.pop(context);
@@ -384,7 +385,7 @@ class _MoreMenuPageState extends State<MoreMenuPage> {
       onTap: () async {
         // Add haptic feedback for iOS-like experience
         HapticFeedback.lightImpact();
-       if(label=="Carbon Coin"){
+       if(label=="Solar Coin"){
          showModalBottomSheet(
            context: context,
            backgroundColor: Colors.transparent,
@@ -484,8 +485,240 @@ class _MoreMenuPageState extends State<MoreMenuPage> {
                                Navigator.pushReplacement(
                                  context,
                                  MaterialPageRoute(
-                                     builder: (context) => CarbonCoin(wallet: w)),
+                                     builder: (context) => SolarCoin(wallet: w)),
                                );
+                             },
+                           ),
+                         );
+                       },
+                     ),
+                   ),
+                 ],
+               ),
+             ),
+           ),
+         );
+
+       }
+       else if(label=="To Wallet"){
+         showModalBottomSheet(
+           context: context,
+           backgroundColor: Colors.transparent,
+           isScrollControlled: true,
+           builder: (context) => DraggableScrollableSheet(
+             initialChildSize: 0.6,
+             minChildSize: 0.3,
+             maxChildSize: 0.9,
+             builder: (context, scrollController) => Container(
+               decoration: BoxDecoration(
+                 color: Colors.white,
+                 borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+               ),
+               child: Column(
+                 children: [
+                   // Drag handle
+                   Container(
+                     width: 40,
+                     height: 4,
+                     margin: const EdgeInsets.only(top: 12, bottom: 8),
+                     decoration: BoxDecoration(
+                       color: Colors.white.withOpacity(0.3),
+                       borderRadius: BorderRadius.circular(2),
+                     ),
+                   ),
+                   // Title
+                   Padding(
+                     padding: const EdgeInsets.all(20),
+                     child: Text(
+                       'Select Wallet',
+                       style: GoogleFonts.poppins(
+                         color: Colors.black,
+                         fontSize: 18,
+                         fontWeight: FontWeight.bold,
+                       ),
+                     ),
+                   ),
+                   // Scrollable wallet list
+                   Expanded(
+                     child: ListView.builder(
+                       controller: scrollController,
+                       padding: const EdgeInsets.only(bottom: 20),
+                       itemCount: provider.fiatWallets.length,
+                       itemBuilder: (context, index) {
+                         final w = provider.fiatWallets[index];
+
+                         return Container(
+                           decoration: BoxDecoration(
+                             borderRadius: BorderRadius.circular(10),
+                             color: Colors.white70,
+                             border: Border.all(color: Colors.black),
+                           ),
+                           margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                           child: ListTile(
+                             contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                             leading: _buildCurrencyIcon(w['currency_code']),
+                             title: Column(
+                               mainAxisAlignment: MainAxisAlignment.start,
+                               crossAxisAlignment: CrossAxisAlignment.start,
+                               children: [
+                                 Text(
+                                   w['currency_name'] ?? "---",
+                                   style: GoogleFonts.poppins(
+                                     color: Colors.black,
+                                     fontSize: 11.5,
+                                     fontWeight: FontWeight.w600,
+                                   ),
+                                 ),
+                                 Row(
+                                   children: [
+                                     Text(
+                                       w['currency'] ?? "---",
+                                       style: GoogleFonts.inter(
+                                         color: Colors.black,
+                                         fontSize: 17,
+                                         fontWeight: FontWeight.w600,
+                                       ),
+                                     ),
+                                     const SizedBox(width: 8),
+                                     Text(
+                                       NumberFormat("#,##0.00").format(w["balance"] ?? 0.0),
+                                       style: GoogleFonts.poppins(
+                                         color: Colors.black,
+                                         fontSize: 17,
+                                         fontWeight: FontWeight.w600,
+                                       ),
+                                     ),
+                                   ],
+                                 ),
+                               ],
+                             ),
+                             //  trailing: isSelected ? const Icon(Icons.check, color: Colors.black, size: 20) : null,
+                             onTap: () {
+                               //walletProvider.selectWallet(index);
+
+                               Navigator.pushReplacement(
+                                 context,
+                                 MaterialPageRoute(
+                                     builder: (context) => WalletToWalletTransferPageIntent(wallet: w)),
+                               );
+
+                             },
+                           ),
+                         );
+                       },
+                     ),
+                   ),
+                 ],
+               ),
+             ),
+           ),
+         );
+
+       }
+       else if(label=="To Bank"){
+         showModalBottomSheet(
+           context: context,
+           backgroundColor: Colors.transparent,
+           isScrollControlled: true,
+           builder: (context) => DraggableScrollableSheet(
+             initialChildSize: 0.6,
+             minChildSize: 0.3,
+             maxChildSize: 0.9,
+             builder: (context, scrollController) => Container(
+               decoration: BoxDecoration(
+                 color: Colors.white,
+                 borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+               ),
+               child: Column(
+                 children: [
+                   // Drag handle
+                   Container(
+                     width: 40,
+                     height: 4,
+                     margin: const EdgeInsets.only(top: 12, bottom: 8),
+                     decoration: BoxDecoration(
+                       color: Colors.white.withOpacity(0.3),
+                       borderRadius: BorderRadius.circular(2),
+                     ),
+                   ),
+                   // Title
+                   Padding(
+                     padding: const EdgeInsets.all(20),
+                     child: Text(
+                       'Select Wallet',
+                       style: GoogleFonts.poppins(
+                         color: Colors.black,
+                         fontSize: 18,
+                         fontWeight: FontWeight.bold,
+                       ),
+                     ),
+                   ),
+                   // Scrollable wallet list
+                   Expanded(
+                     child: ListView.builder(
+                       controller: scrollController,
+                       padding: const EdgeInsets.only(bottom: 20),
+                       itemCount: provider.fiatWallets.length,
+                       itemBuilder: (context, index) {
+                         final w = provider.fiatWallets[index];
+
+                         return Container(
+                           decoration: BoxDecoration(
+                             borderRadius: BorderRadius.circular(10),
+                             color: Colors.white70,
+                             border: Border.all(color: Colors.black),
+                           ),
+                           margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                           child: ListTile(
+                             contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                             leading: _buildCurrencyIcon(w['currency_code']),
+                             title: Column(
+                               mainAxisAlignment: MainAxisAlignment.start,
+                               crossAxisAlignment: CrossAxisAlignment.start,
+                               children: [
+                                 Text(
+                                   w['currency_name'] ?? "---",
+                                   style: GoogleFonts.poppins(
+                                     color: Colors.black,
+                                     fontSize: 11.5,
+                                     fontWeight: FontWeight.w600,
+                                   ),
+                                 ),
+                                 Row(
+                                   children: [
+                                     Text(
+                                       w['currency'] ?? "---",
+                                       style: GoogleFonts.inter(
+                                         color: Colors.black,
+                                         fontSize: 17,
+                                         fontWeight: FontWeight.w600,
+                                       ),
+                                     ),
+                                     const SizedBox(width: 8),
+                                     Text(
+                                       NumberFormat("#,##0.00").format(w["balance"] ?? 0.0),
+                                       style: GoogleFonts.poppins(
+                                         color: Colors.black,
+                                         fontSize: 17,
+                                         fontWeight: FontWeight.w600,
+                                       ),
+                                     ),
+                                   ],
+                                 ),
+                               ],
+                             ),
+                             //  trailing: isSelected ? const Icon(Icons.check, color: Colors.black, size: 20) : null,
+                             onTap: () {
+                               //walletProvider.selectWallet(index);
+
+                               Navigator.pushReplacement(
+                                 context,
+                                 MaterialPageRoute(
+                                     builder: (context) => WalletToBankTransferPageIntent(wallet: w)),
+                               );
+
                              },
                            ),
                          );

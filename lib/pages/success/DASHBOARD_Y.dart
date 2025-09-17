@@ -13,6 +13,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:gobeller/controller/profileControllers.dart';
 import 'package:gobeller/controller/wallet_services.dart';
 import 'package:gobeller/newdesigns/SendMoneyScreen.dart';
+import 'package:gobeller/newdesigns/cross_border_transfer.dart';
 import 'package:gobeller/pages/loan/loan.dart';
 import 'package:gobeller/pages/quick_action/cable_tv_page.dart';
 import 'package:gobeller/pages/quick_action/electric_meter_page.dart';
@@ -232,6 +233,23 @@ class _DashboardPageState extends State<DashboardY> {
                     context,
                     settings: const RouteSettings(name: '/send-money'),
                     screen:  SendMoneyScreen(wallet: wallet),
+                    withNavBar: true,
+                  );
+                },
+              ),
+
+              const SizedBox(height: 10),
+
+              _TransferOptionTile(
+                icon: Icons.swap_horiz_sharp,
+                title: "Cross Border Transfer",
+                color: Colors.black54,
+                onTap: () {
+                  Navigator.pop(context);
+                  PersistentNavBarNavigator.pushNewScreenWithRouteSettings(
+                    context,
+                    settings: const RouteSettings(name: '/cross-border-money'),
+                    screen:  CrossBorderTransferPageIntent(wallet: wallet),
                     withNavBar: true,
                   );
                 },
@@ -1970,7 +1988,145 @@ class _RecommendedSectionState extends State<RecommendedSection>
   final Color _defaultTertiaryColor = const Color(0xFFF5F5F5);
   Color _primaryColor=Color(0xFFFF9800);
   Color _secondaryColor=Colors.teal;
+  Map<String, dynamic> _menuItems = {};
 
+
+  // Get organization features
+
+  bool isVtuEnabled = false;
+  bool isFixedDepositEnabled = false;
+  bool isLoanEnabled = false;
+  bool isInvestmentEnabled = false;
+  bool isTarget_Savings_Enabled=false;
+  bool isBNPLEnabled = false;
+  bool isCustomerMgtEnabled = false;
+  bool isMobileMoney=false;
+  bool Solarcoin=false;
+
+  bool electricity=false;
+
+  bool airtime=false;
+
+  bool data=false;
+
+  bool cable=false;
+
+  bool loan=false;
+
+  bool investment=false;
+
+  bool ts=false;
+
+  bool crypto=false;
+
+  bool bnpl=false;
+
+
+
+  Future<void> _loadSettingsAndMenus() async {
+    final prefs = await SharedPreferences.getInstance();
+    final settingsJson = prefs.getString('appSettingsData');
+    final orgJson = prefs.getString('organizationData');
+
+    if (settingsJson != null) {
+      final settings = json.decode(settingsJson)['data'];
+      final secondaryColorHex = settings['customized-app-secondary-color'] ?? '#FF9800';
+
+      setState(() {
+        _secondaryColor = Color(int.parse(secondaryColorHex.replaceAll('#', '0xFF')));
+      });
+    }
+
+    if (orgJson != null) {
+      final orgData = json.decode(orgJson);
+      setState(() {
+        _menuItems = {
+          ...?orgData['data']?['customized_app_displayable_menu_items'],
+        };
+      });
+    }
+
+  }
+
+  Future<void> _buildVisibleMenuCards() async {
+    final prefs = await SharedPreferences.getInstance();
+    final orgJson = prefs.getString('organizationData');
+
+    if (orgJson != null) {
+      final orgData = json.decode(orgJson);
+      isVtuEnabled = orgData['data']?['organization_subscribed_features']?['vtu-mgt'] ?? false;
+      isFixedDepositEnabled = orgData['data']?['organization_subscribed_features']?['fixed-deposit-mgt'] ?? false;
+      isLoanEnabled = orgData['data']?['organization_subscribed_features']?['loan-mgt'] ?? false;
+      isInvestmentEnabled = orgData['data']?['organization_subscribed_features']?['investment-mgt'] ?? false;
+      isTarget_Savings_Enabled = orgData['data']?['organization_subscribed_features']?['target-saving-mgt'] ?? false;
+
+      isBNPLEnabled = orgData['data']?['organization_subscribed_features']?['properties-mgt'] ?? false;
+      isCustomerMgtEnabled = orgData['data']?['organization_subscribed_features']?['customers-mgt'] ?? false;
+
+      isMobileMoney=orgData['data']?['organization_subscribed_features']?['cross-border-payment-mgt'] ?? false;
+
+      Solarcoin=orgData['data']?['organization_subscribed_features']?['customized-currency-mgt'] ?? false;
+
+    }
+
+
+
+
+
+
+
+
+
+
+    // Only show VTU-related menus if vtu-mgt is enabled
+    if (isVtuEnabled) {
+      if (_menuItems['display-electricity-menu'] == true) {
+        electricity=true;
+      }
+      if (_menuItems['display-airtime-menu'] == true) {
+        airtime=true;
+      }
+      if (_menuItems['display-data-menu'] == true) {
+        data=true;
+      }
+      if (_menuItems['display-cable-tv-menu'] == true) {
+        cable=true;
+      }
+    }
+
+    // Only show loan if enabled
+    if (isLoanEnabled) {
+      if (_menuItems['display-loan-menu'] == true) {
+        loan=true;
+      }
+    }
+
+    // Only show Investment if enabled
+    if (isInvestmentEnabled) {
+      if (_menuItems['display-investment-menu'] == true) {
+        investment=true;
+      }
+    }
+
+    if (isTarget_Savings_Enabled) {
+      ts=true;
+
+    }
+    if (_menuItems['display-crypto-exchange-menu'] == true) {
+      crypto=true;
+    }
+
+    // Only show BNLP if enabled
+    if (isBNPLEnabled) {
+      if (_menuItems['display-buy-now-pay-later-menu'] == true) {
+        bnpl=true;
+      }
+    }
+
+
+
+
+  }
 
 
 
@@ -1978,6 +2134,10 @@ class _RecommendedSectionState extends State<RecommendedSection>
   void initState() {
     super.initState();
     _loadPrimaryColorAndLogo();
+
+
+    _loadSettingsAndMenus();
+    _buildVisibleMenuCards();
 
 
     _titleController = AnimationController(
@@ -2058,70 +2218,77 @@ class _RecommendedSectionState extends State<RecommendedSection>
               const SizedBox(height: 10),
 
               // Wallet to Wallet Transfer option
-              _TransferOptionTile(
-                icon: Icons.phone_android,
-                title: "Airtime",
-                color: Colors.black87,
-                onTap: () {
-                  Navigator.pop(context);
-                  PersistentNavBarNavigator.pushNewScreenWithRouteSettings(
-                    context,
-                    settings: const RouteSettings(name: '/airtime'),
-                    screen: BuyAirtimePage(),
-                    withNavBar: true,
-                  );
-                },
-              ),
+
+              if(airtime)
+                _TransferOptionTile(
+                  icon: Icons.phone_android,
+                  title: "Airtime",
+                  color: Colors.black87,
+                  onTap: () {
+                    Navigator.pop(context);
+                    PersistentNavBarNavigator.pushNewScreenWithRouteSettings(
+                      context,
+                      settings: const RouteSettings(name: '/airtime'),
+                      screen: BuyAirtimePage(),
+                      withNavBar: true,
+                    );
+                  },
+                ),
               // Wallet to Bank Transfer option
 
               const SizedBox(height: 10),
 
-              _TransferOptionTile(
-                icon: Icons.wifi,
-                title: "Data",
-                color: Colors.black87,
-                onTap: () {
-                  Navigator.pop(context);
-                  PersistentNavBarNavigator.pushNewScreenWithRouteSettings(
-                    context,
-                    settings: const RouteSettings(name: '/data_purchase'),
-                    screen:  DataPurchasePage(),
-                    withNavBar: true,
-                  );
-                },
-              ),
+              if(data)
+                _TransferOptionTile(
+                  icon: Icons.wifi,
+                  title: "Data",
+                  color: Colors.black87,
+                  onTap: () {
+                    Navigator.pop(context);
+                    PersistentNavBarNavigator.pushNewScreenWithRouteSettings(
+                      context,
+                      settings: const RouteSettings(name: '/data_purchase'),
+                      screen:  DataPurchasePage(),
+                      withNavBar: true,
+                    );
+                  },
+                ),
               const SizedBox(height: 10),
 
-              _TransferOptionTile(
-                icon: Icons.flash_on_rounded,
-                title: "Electricity",
-                color: Colors.black87,
-                onTap: () {
-                  Navigator.pop(context);
-                  PersistentNavBarNavigator.pushNewScreenWithRouteSettings(
-                    context,
-                    settings: const RouteSettings(name: '/electric'),
-                    screen:  ElectricityPaymentPage(),
-                    withNavBar: true,
-                  );
-                },
-              ),
+
+              if(electricity)
+                _TransferOptionTile(
+                  icon: Icons.flash_on_rounded,
+                  title: "Electricity",
+                  color: Colors.black87,
+                  onTap: () {
+                    Navigator.pop(context);
+                    PersistentNavBarNavigator.pushNewScreenWithRouteSettings(
+                      context,
+                      settings: const RouteSettings(name: '/electric'),
+                      screen:  ElectricityPaymentPage(),
+                      withNavBar: true,
+                    );
+                  },
+                ),
               const SizedBox(height: 10),
 
-              _TransferOptionTile(
-                icon: Icons.tv,
-                title: "Cable TV",
-                color: Colors.black87,
-                onTap: () {
-                  Navigator.pop(context);
-                  PersistentNavBarNavigator.pushNewScreenWithRouteSettings(
-                    context,
-                    settings: const RouteSettings(name: '/cable_tv'),
-                    screen:  CableTVPage(),
-                    withNavBar: true,
-                  );
-                },
-              ),
+
+              if(cable)
+                _TransferOptionTile(
+                  icon: Icons.tv,
+                  title: "Cable TV",
+                  color: Colors.black87,
+                  onTap: () {
+                    Navigator.pop(context);
+                    PersistentNavBarNavigator.pushNewScreenWithRouteSettings(
+                      context,
+                      settings: const RouteSettings(name: '/cable_tv'),
+                      screen:  CableTVPage(),
+                      withNavBar: true,
+                    );
+                  },
+                ),
             ],
           ),
         );
@@ -2188,44 +2355,52 @@ class _RecommendedSectionState extends State<RecommendedSection>
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
 
-              _buildAnimatedButton(
+              if(isVtuEnabled)
 
-                  route: (){
+                _buildAnimatedButton(
 
-                    _showTransferOptions(context);
+                    route: () {
+                      _showTransferOptions(context);
+                    },
 
-
-                  },
-
-                  'Pay Bills', FontAwesomeIcons.receipt, _secondaryColor!.withOpacity(0.5), 2),
-
-              _buildAnimatedButton(
-
-                  route: (){
-
-                    PersistentNavBarNavigator.pushNewScreen(
-                      context,
-                      screen: LoanPage(),
-                      withNavBar: true,
-                    );
-
-                  },
-
-                  'Loans', FontAwesomeIcons.moneyBill,
-                  _secondaryColor!.withOpacity(0.5),0),
-              _buildAnimatedButton(
-                  route: (){
-
-                    PersistentNavBarNavigator.pushNewScreen(
-                      context,
-                      screen: CryptoWalletPage(menu:true),
-                      withNavBar: true,
-                    );
+                    'Pay Bills', FontAwesomeIcons.receipt,
+                    _secondaryColor!.withOpacity(0.5), 2),
 
 
-                  },
 
-                  'Crypto', Icons.currency_bitcoin_sharp, _secondaryColor!.withOpacity(0.5), 1),
+
+              if(loan)
+
+                _buildAnimatedButton(
+
+                    route: (){
+
+                      PersistentNavBarNavigator.pushNewScreen(
+                        context,
+                        screen: LoanPage(),
+                        withNavBar: true,
+                      );
+
+                    },
+
+                    'Loans', FontAwesomeIcons.moneyBill,
+                    _secondaryColor!.withOpacity(0.5),0),
+
+
+              if(crypto)
+                _buildAnimatedButton(
+                    route: (){
+
+                      PersistentNavBarNavigator.pushNewScreen(
+                        context,
+                        screen: CryptoWalletPage(menu:true),
+                        withNavBar: true,
+                      );
+
+
+                    },
+
+                    'Crypto', Icons.currency_bitcoin_sharp, _secondaryColor!.withOpacity(0.5), 1),
 
               _buildAnimatedButton(
 

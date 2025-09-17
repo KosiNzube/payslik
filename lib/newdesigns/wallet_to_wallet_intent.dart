@@ -142,6 +142,7 @@ class _WalletToWalletTransferPageState extends State<WalletToWalletTransferPageI
   void showTransactionSummaryModal(WalletTransferController controller) async {
     final primaryColor = await _getColorFromPrefs('customized-app-primary-color', const Color(0xFF171E3B));
     final secondaryColor = await _getColorFromPrefs('customized-app-secondary-color', const Color(0xFFEB6D00));
+    FocusScope.of(context).unfocus();
 
     showModalBottomSheet(
       context: context,

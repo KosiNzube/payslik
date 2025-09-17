@@ -9,18 +9,18 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../utils/api_service.dart';
 
-class BuyCarbonCoinPage extends StatefulWidget {
+class BuySolarCoinPage extends StatefulWidget {
 
   final Map<String, dynamic> wallet;
 
-  const BuyCarbonCoinPage({super.key, required this.wallet});
+  const BuySolarCoinPage({super.key, required this.wallet});
 
 
   @override
-  _BuyCarbonCoinPageState createState() => _BuyCarbonCoinPageState();
+  _BuySolarCoinPageState createState() => _BuySolarCoinPageState();
 }
 
-class _BuyCarbonCoinPageState extends State<BuyCarbonCoinPage> {
+class _BuySolarCoinPageState extends State<BuySolarCoinPage> {
   int currentStep = 0;
 
   // Step 1 variables
@@ -303,7 +303,7 @@ class _BuyCarbonCoinPageState extends State<BuyCarbonCoinPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Buy Carbon Coin',style: TextStyle(color: Colors.black),),
+        title: Text('Buy Solar Coin',style: TextStyle(color: Colors.black),),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         elevation: 0,

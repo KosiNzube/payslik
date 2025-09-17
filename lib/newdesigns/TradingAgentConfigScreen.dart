@@ -90,7 +90,7 @@ class _TradingAgentConfigScreenState extends State<TradingAgentConfigScreen> {
         // Success
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(response['message'] ?? 'Trading agent configuration saved successfully!'),
+            content: Text(response['message'] ?? 'Request sent successfully!'),
             backgroundColor: _primaryColor,
           ),
         );
@@ -189,244 +189,247 @@ class _TradingAgentConfigScreenState extends State<TradingAgentConfigScreen> {
         centerTitle: true,
 
       ),
-      body: CustomScrollView(
-        slivers: [
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
+      body: Form(
+        key: _formKey,
+        child: CustomScrollView(
+          slivers: [
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+
+                    Container(
+
+                      width: double.infinity,
+
+                      padding: const EdgeInsets.all(32),
+
+                      decoration: BoxDecoration(
+
+                        color: Colors.white,
+
+                        borderRadius: BorderRadius.circular(16),
+
+                        border: Border.all(color: Colors.grey[200]!),
+
+                      ),
+
+                      child: Column(
+
+                        children: [
+
+                          Text(
+
+                            "Source Wallet",
+
+                            style: TextStyle(
+
+                              fontSize: 16,
+
+                              color: Colors.grey[600],
+
+                              fontWeight: FontWeight.w500,
+
+                            ),
+
+                          ),
+
+                          const SizedBox(height: 8),
+
+                          Text(
+
+
+
+                            widget.wallet['currency']+ NumberFormat("#,##0.00")
+
+                                .format(double.tryParse(widget.wallet['balance'].toString())),
+
+
+
+
+
+                            style: const TextStyle(
+
+                              fontSize: 32,
+
+                              fontWeight: FontWeight.bold,
+
+                              color: Colors.black87,
+
+                            ),
+
+                          ),
+
+                          const SizedBox(height: 4),
+
+                          Text(
+
+                            'Account: '+ widget.wallet['wallet_number'],textAlign: TextAlign.center,
+
+                            style: TextStyle(
+
+                              fontSize: 18,
+
+                              color: Colors.grey[600],
+
+                              fontWeight: FontWeight.w500,
+
+                            ),
+
+                          ),
+
+                        ],
+
+                      ),
+
+                    ),
+
+                    const SizedBox(height: 20),
+
+
+                    Text(
+                      'Configure Your Trading Settings',
+                      style: theme.textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: theme.colorScheme.onSurface,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Enter accurate rates and limits to get started.',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 24),
+                  ],
+                ),
+              ),
+            ),
+            SliverToBoxAdapter(
+              child: _buildSectionCard(
+                context,
+                title: 'Trading Rates',
+                icon: Icons.trending_up,
                 children: [
-
-                  Container(
-
-                    width: double.infinity,
-
-                    padding: const EdgeInsets.all(32),
-
-                    decoration: BoxDecoration(
-
-                      color: Colors.white,
-
-                      borderRadius: BorderRadius.circular(16),
-
-                      border: Border.all(color: Colors.grey[200]!),
-
-                    ),
-
-                    child: Column(
-
-                      children: [
-
-                        Text(
-
-                          "Source Wallet",
-
-                          style: TextStyle(
-
-                            fontSize: 16,
-
-                            color: Colors.grey[600],
-
-                            fontWeight: FontWeight.w500,
-
-                          ),
-
-                        ),
-
-                        const SizedBox(height: 8),
-
-                        Text(
-
-
-
-                          widget.wallet['currency']+ NumberFormat("#,##0.00")
-
-                              .format(double.tryParse(widget.wallet['balance'].toString())),
-
-
-
-
-
-                          style: const TextStyle(
-
-                            fontSize: 32,
-
-                            fontWeight: FontWeight.bold,
-
-                            color: Colors.black87,
-
-                          ),
-
-                        ),
-
-                        const SizedBox(height: 4),
-
-                        Text(
-
-                          'Account: '+ widget.wallet['wallet_number'],textAlign: TextAlign.center,
-
-                          style: TextStyle(
-
-                            fontSize: 18,
-
-                            color: Colors.grey[600],
-
-                            fontWeight: FontWeight.w500,
-
-                          ),
-
-                        ),
-
-                      ],
-
-                    ),
-
+                  _buildProfessionalTextField(
+                    context,
+                    controller: _buyRateController,
+                    label: 'Buy Rate',
+                    hint: 'e.g., 163',
+                    icon: Icons.arrow_downward,
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
                   ),
-
-                  const SizedBox(height: 20),
-
-
-                  Text(
-                    'Configure Your Trading Settings',
-                    style: theme.textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: theme.colorScheme.onSurface,
-                    ),
-                    textAlign: TextAlign.center,
+                  const SizedBox(height: 16),
+                  _buildProfessionalTextField(
+                    context,
+                    controller: _sellRateController,
+                    label: 'Sell Rate',
+                    hint: 'e.g., 178',
+                    icon: Icons.arrow_upward,
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Enter accurate rates and limits to get started.',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 24),
                 ],
               ),
             ),
-          ),
-          SliverToBoxAdapter(
-            child: _buildSectionCard(
-              context,
-              title: 'Trading Rates',
-              icon: Icons.trending_up,
-              children: [
-                _buildProfessionalTextField(
-                  context,
-                  controller: _buyRateController,
-                  label: 'Buy Rate',
-                  hint: 'e.g., 163',
-                  icon: Icons.arrow_downward,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                ),
-                const SizedBox(height: 16),
-                _buildProfessionalTextField(
-                  context,
-                  controller: _sellRateController,
-                  label: 'Sell Rate',
-                  hint: 'e.g., 178',
-                  icon: Icons.arrow_upward,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                ),
-              ],
-            ),
-          ),
-          const SliverToBoxAdapter(child: SizedBox(height: 16)),
-          SliverToBoxAdapter(
-            child: _buildSectionCard(
-              context,
-              title: 'Buy Limits',
-              icon: Icons.shopping_cart,
-              children: [
-                _buildProfessionalTextField(
-                  context,
-                  controller: _buyMinLimitController,
-                  label: 'Minimum Buy Limit',
-                  hint: 'e.g., 1000',
-                  icon: Icons.swap_horiz_sharp,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                ),
-                const SizedBox(height: 16),
-                _buildProfessionalTextField(
-                  context,
-                  controller: _buyMaxLimitController,
-                  label: 'Maximum Buy Limit',
-                  hint: 'e.g., 3000',
-                  icon: Icons.swap_horiz_sharp,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                ),
-              ],
-            ),
-          ),
-          const SliverToBoxAdapter(child: SizedBox(height: 16)),
-          SliverToBoxAdapter(
-            child: _buildSectionCard(
-              context,
-              title: 'Sell Limits',
-              icon: Icons.sell,
-              children: [
-                _buildProfessionalTextField(
-                  context,
-                  controller: _sellMinLimitController,
-                  label: 'Minimum Sell Limit',
-                  hint: 'e.g., 1000',
-                  icon: Icons.swap_horiz_sharp,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                ),
-                const SizedBox(height: 16),
-                _buildProfessionalTextField(
-                  context,
-                  controller: _sellMaxLimitController,
-                  label: 'Maximum Sell Limit',
-                  hint: 'e.g., 4000',
-                  icon: Icons.swap_horiz_sharp,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                ),
-              ],
-            ),
-          ),
-          const SliverToBoxAdapter(child: SizedBox(height: 32)),
-          SliverFillRemaining(
-            hasScrollBody: false,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: ElevatedButton.icon(
-                onPressed: _isLoading ? null : _submitTradingConfig,
-                icon: _isLoading
-                    ? const SizedBox(
-                  height: 20,
-                  width: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+            const SliverToBoxAdapter(child: SizedBox(height: 16)),
+            SliverToBoxAdapter(
+              child: _buildSectionCard(
+                context,
+                title: 'Buy Limits',
+                icon: Icons.shopping_cart,
+                children: [
+                  _buildProfessionalTextField(
+                    context,
+                    controller: _buyMinLimitController,
+                    label: 'Minimum Buy Limit',
+                    hint: 'e.g., 1000',
+                    icon: Icons.swap_horiz_sharp,
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
                   ),
-                )
-                    : const Icon(Icons.arrow_forward, size: 20),
-                label: Text(
-                  _isLoading ? 'Processing...' : 'Continue',
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
+                  const SizedBox(height: 16),
+                  _buildProfessionalTextField(
+                    context,
+                    controller: _buyMaxLimitController,
+                    label: 'Maximum Buy Limit',
+                    hint: 'e.g., 3000',
+                    icon: Icons.swap_horiz_sharp,
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
                   ),
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: _secondaryColor,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 24.0),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12.0),
+                ],
+              ),
+            ),
+            const SliverToBoxAdapter(child: SizedBox(height: 16)),
+            SliverToBoxAdapter(
+              child: _buildSectionCard(
+                context,
+                title: 'Sell Limits',
+                icon: Icons.sell,
+                children: [
+                  _buildProfessionalTextField(
+                    context,
+                    controller: _sellMinLimitController,
+                    label: 'Minimum Sell Limit',
+                    hint: 'e.g., 1000',
+                    icon: Icons.swap_horiz_sharp,
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
                   ),
-                  elevation: 4,
-                  minimumSize: const Size(double.infinity, 56),
+                  const SizedBox(height: 16),
+                  _buildProfessionalTextField(
+                    context,
+                    controller: _sellMaxLimitController,
+                    label: 'Maximum Sell Limit',
+                    hint: 'e.g., 4000',
+                    icon: Icons.swap_horiz_sharp,
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  ),
+                ],
+              ),
+            ),
+            const SliverToBoxAdapter(child: SizedBox(height: 32)),
+            SliverFillRemaining(
+              hasScrollBody: false,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: ElevatedButton.icon(
+                  onPressed: _isLoading ? null : _submitTradingConfig,
+                  icon: _isLoading
+                      ? const SizedBox(
+                    height: 20,
+                    width: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    ),
+                  )
+                      : const Icon(Icons.arrow_forward, size: 20),
+                  label: Text(
+                    _isLoading ? 'Processing...' : 'Continue',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: _secondaryColor,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 24.0),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12.0),
+                    ),
+                    elevation: 4,
+                    minimumSize: const Size(double.infinity, 56),
+                  ),
                 ),
               ),
             ),
-          ),
-          const SliverToBoxAdapter(child: SizedBox(height: 16)),
-        ],
+            const SliverToBoxAdapter(child: SizedBox(height: 16)),
+          ],
+        ),
       ),
     );
   }

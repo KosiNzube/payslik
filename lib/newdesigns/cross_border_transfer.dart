@@ -1,8 +1,11 @@
 import 'dart:convert';
+import 'dart:math';
 
 import 'package:dropdown_search/dropdown_search.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
+import 'package:gobeller/DASHBOARD_DEFAULT.dart';
 import 'package:gobeller/utils/currency_input_formatter.dart';
 import 'package:gobeller/controller/wallet_to_bank_controller.dart';
 import 'package:intl/intl.dart';
@@ -11,27 +14,38 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../utils/api_service.dart';
 
-class WalletToBankTransferPageIntent extends StatefulWidget {
+class CrossBorderTransferPageIntent extends StatefulWidget {
   final Map<String, dynamic> wallet;
 
-   WalletToBankTransferPageIntent({super.key, required this.wallet});
+  CrossBorderTransferPageIntent({super.key, required this.wallet});
 
   @override
-  State<WalletToBankTransferPageIntent> createState() => _WalletToBankTransferPageState();
+  State<CrossBorderTransferPageIntent> createState() => _CrossBorderTransferPageState();
 }
 
-class _WalletToBankTransferPageState extends State<WalletToBankTransferPageIntent> {
+class _CrossBorderTransferPageState extends State<CrossBorderTransferPageIntent> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _accountNumberController = TextEditingController();
   final TextEditingController _amountController = TextEditingController();
   final TextEditingController _narrationController = TextEditingController();
   final TextEditingController _pinController = TextEditingController();
 
+  // New controllers for API fields
+  final TextEditingController _firstNameController = TextEditingController();
+  final TextEditingController _lastNameController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _bankCodeController = TextEditingController();
+  final TextEditingController _bankSortCodeController = TextEditingController();
+  final TextEditingController _bankSwiftCodeController = TextEditingController();
   String? selectedBank;
   String? selectedBankId;
 
+  // New variables for API fields
+  String? selectedCountryCode;
+  String selectedPaymentScheme = "swift";
+
   bool isLoading = false;
-  bool _isPinHidden = true; // Add this as a class-level variable if not already declared
+  bool _isPinHidden = true;
   bool saveBeneficiary = false;
 
   Color? _primaryColor;
@@ -42,8 +56,6 @@ class _WalletToBankTransferPageState extends State<WalletToBankTransferPageInten
   bool showSuggestions = false;
   final formatter = NumberFormat('#,###');
 
-
-
   @override
   void initState() {
     super.initState();
@@ -52,14 +64,10 @@ class _WalletToBankTransferPageState extends State<WalletToBankTransferPageInten
       final controller = Provider.of<WalletToBankTransferController>(context, listen: false);
       controller.fetchBanks();
       controller.fetchSourceWallets();
-      controller.fetchSavedBeneficiaries(); // 👈 Add this
+      controller.fetchSavedBeneficiaries();
       _resetForm();
     });
-
-
   }
-
-
 
   @override
   void dispose() {
@@ -67,9 +75,14 @@ class _WalletToBankTransferPageState extends State<WalletToBankTransferPageInten
     _amountController.dispose();
     _narrationController.dispose();
     _pinController.dispose();
+    _firstNameController.dispose();
+    _lastNameController.dispose();
+    _emailController.dispose();
+    _bankCodeController.dispose();
+    _bankSortCodeController.dispose();   // Dispose new controller
+    _bankSwiftCodeController.dispose();  // Dispose new controller
     super.dispose();
   }
-
 
   Future<void> _loadPrimaryColorAndLogo() async {
     final prefs = await SharedPreferences.getInstance();
@@ -97,13 +110,20 @@ class _WalletToBankTransferPageState extends State<WalletToBankTransferPageInten
       } catch (_) {}
     }
   }
+
   String formatNumber(String input) {
-    // Remove any commas before parsing
     String cleaned = input.replaceAll(',', '');
     int? number = int.tryParse(cleaned);
-    if (number == null) return input; // Return as-is if not a number
+    if (number == null) return input;
     return formatter.format(number);
   }
+
+  // Generate initialization reference
+  String generateInitializationReference() {
+    return DateTime.now().millisecondsSinceEpoch.toString() +
+        Random().nextInt(10000).toString();
+  }
+
   void _showTransactionSummary() {
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
 
@@ -126,9 +146,7 @@ class _WalletToBankTransferPageState extends State<WalletToBankTransferPageInten
                 child: SafeArea(
                   top: false,
                   child: Stack(
-
                     children: [
-
                       ListView(
                         padding: EdgeInsets.zero,
                         shrinkWrap: true,
@@ -198,27 +216,41 @@ class _WalletToBankTransferPageState extends State<WalletToBankTransferPageInten
                                 ),
                                 const SizedBox(height: 20),
                                 _buildDetailRow(
-                                    "RECIPIENT BANK", selectedBank ?? "Not Selected"),
-                                const SizedBox(height: 20),
-                                _buildDetailRow(
-                                    "ACCOUNT NUMBER", _accountNumberController.text),
-                                const SizedBox(height: 20),
-                                _buildDetailRow(
-                                  "ACCOUNT NAME",
-                                  context
-                                      .read<WalletToBankTransferController>()
-                                      .beneficiaryName,
+                                    "PAYMENT SCHEME",
+                                    selectedPaymentScheme.toUpperCase()
                                 ),
                                 const SizedBox(height: 20),
                                 _buildDetailRow(
-                                  "NARRATION",
+                                    "BENEFICIARY",
+                                    "${_firstNameController.text} ${_lastNameController.text}"
+                                ),
+                                const SizedBox(height: 20),
+                                _buildDetailRow(
+                                    "EMAIL",
+                                    _emailController.text
+                                ),
+                                const SizedBox(height: 20),
+                                _buildDetailRow(
+                                    "ACCOUNT NUMBER",
+                                    _accountNumberController.text
+                                ),
+                                const SizedBox(height: 20),
+                                _buildDetailRow(
+                                    "BANK CODE",
+                                    _bankCodeController.text
+                                ),
+                                const SizedBox(height: 20),
+                                _buildDetailRow(
+                                    "COUNTRY",
+                                    selectedCountryCode ?? ""
+                                ),
+                                const SizedBox(height: 20),
+                                _buildDetailRow(
+                                  "DESCRIPTION",
                                   _narrationController.text.isNotEmpty
                                       ? _narrationController.text
-                                      : "Wallet to Bank Transfer",
+                                      : "Cross Border FX Transfer",
                                 ),
-                                const SizedBox(height: 20),
-                                _buildDetailRow("SAVE AS BENEFICIARY",
-                                    saveBeneficiary ? "Yes" : "No"),
                               ],
                             ),
                           ),
@@ -249,8 +281,7 @@ class _WalletToBankTransferPageState extends State<WalletToBankTransferPageInten
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: List.generate(4, (index) {
                                 return Container(
-                                  margin:
-                                  const EdgeInsets.symmetric(horizontal: 8),
+                                  margin: const EdgeInsets.symmetric(horizontal: 8),
                                   width: 50,
                                   height: 50,
                                   decoration: BoxDecoration(
@@ -293,8 +324,7 @@ class _WalletToBankTransferPageState extends State<WalletToBankTransferPageInten
                                 _buildPinRow(['7', '8', '9'], setModalState),
                                 const SizedBox(height: 16),
                                 Row(
-                                  mainAxisAlignment:
-                                  MainAxisAlignment.spaceEvenly,
+                                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                                   children: [
                                     const SizedBox(width: 60),
                                     _buildPinButton('0', setModalState),
@@ -305,8 +335,7 @@ class _WalletToBankTransferPageState extends State<WalletToBankTransferPageInten
                                             _pinController.text =
                                                 _pinController.text.substring(
                                                     0,
-                                                    _pinController.text.length -
-                                                        1);
+                                                    _pinController.text.length - 1);
                                           });
                                         }
                                       },
@@ -388,9 +417,7 @@ class _WalletToBankTransferPageState extends State<WalletToBankTransferPageInten
 
                       // Optional overlay if processing
                       if (isLoading ||
-                          context
-                              .read<WalletToBankTransferController>()
-                              .isProcessing)
+                          context.read<WalletToBankTransferController>().isProcessing)
                         Positioned.fill(
                           child: Container(
                             decoration: BoxDecoration(
@@ -413,7 +440,6 @@ class _WalletToBankTransferPageState extends State<WalletToBankTransferPageInten
       },
     );
   }
-
 
   Widget _buildDetailRow(String label, String value, {bool isAmount = false}) {
     return Row(
@@ -488,16 +514,28 @@ class _WalletToBankTransferPageState extends State<WalletToBankTransferPageInten
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     return prefs.getString('auth_token');
   }
+
+  // Updated API method
+
+
+// Updated completeBankTransfer method
   Future<Map<String, dynamic>> completeBankTransfer({
-    required String sourceWallet,
-    required String destinationAccountNumber,
-    required String bankId,
-    required double amount,
-    required String description,
+    required String sourceWalletNumberOrUuid,
+    required String transferPaymentScheme,
+    required double transferAmount,
+    required String transferDescription,
+    required String initializationReference,
     required String transactionPin,
-    required bool saveBeneficiary,
+    required String beneficiaryFirstName,
+    required String beneficiaryLastName,
+    required String beneficiaryAccountNumber,
+    required String beneficiaryCountryCode,
+    required String beneficiaryEmail,
+    required String beneficiaryBankCode,
+    required String beneficiaryBankSortCode,  // New parameter
+    required String beneficiaryBankSwiftCode, // New parameter
   }) async {
-    String _transactionMessage="";
+    String _transactionMessage = "";
 
     try {
       final String? token = await _getAuthToken();
@@ -507,18 +545,31 @@ class _WalletToBankTransferPageState extends State<WalletToBankTransferPageInten
       }
 
       final requestBody = {
-        "source_wallet_number": sourceWallet,
-        "destination_account_number": destinationAccountNumber,
-        "bank_id": bankId,
-        "amount": amount,
-        "description": description.isNotEmpty ? description : "Wallet to Bank Transfer",
+        "source_wallet_number_or_uuid": sourceWalletNumberOrUuid,
+        "transfer_payment_scheme": transferPaymentScheme,
+        "transfer_amount": transferAmount.toString(),
+        "transfer_description": transferDescription,
+        "initialization_reference": initializationReference,
         "transaction_pin": transactionPin,
+        "beneficiary_first_name": beneficiaryFirstName,
+        "beneficiary_last_name": beneficiaryLastName,
+        "beneficiary_account_number": beneficiaryAccountNumber,
+        "beneficiary_country_code": beneficiaryCountryCode,
+        "beneficiary_email": beneficiaryEmail,
+        "beneficiary_bank_code": beneficiaryBankCode,
+        "beneficiary_bank_sort_code": beneficiaryBankSortCode,   // New field
+        "beneficiary_bank_swift_code": beneficiaryBankSwiftCode, // New field
       };
 
       final response = await ApiService.postRequest(
-        "/customers/wallet-to-bank-transaction/process",
+        "/cross-border-payment-mgt/fx-wallet-bank-transfer/process",
         requestBody,
-        extraHeaders: {'Authorization': 'Bearer $token'},
+        extraHeaders: {
+          'Authorization': 'Bearer $token',
+          'AppID': 'e64af448-e2a8-4842-b859-2cfc824439d1',
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
       );
 
       if (response["status"] == true) {
@@ -534,165 +585,140 @@ class _WalletToBankTransferPageState extends State<WalletToBankTransferPageInten
     }
   }
 
+  Future<Map<String, dynamic>> initializeTransfer({
+    required String sourceWalletNumberOrUuid,
+    required double transferAmount,
+    required String transferPaymentScheme,
+    required String transferDescription,
+  }) async {
+    String _transactionMessage = "";
 
+    try {
+      final String? token = await _getAuthToken();
+      if (token == null) {
+        _transactionMessage = "❌ You are not logged in. Please log in to continue.";
+        return {"success": false, "message": _transactionMessage};
+      }
+
+      final requestBody = {
+        "source_wallet_number_or_uuid": sourceWalletNumberOrUuid,
+        "transfer_payment_scheme": transferPaymentScheme,
+        "transfer_amount": transferAmount.toString(),
+        "transfer_description": transferDescription,
+      };
+
+      final response = await ApiService.postRequest(
+        "/cross-border-payment-mgt/fx-wallet-bank-transfer/initiate",
+        requestBody,
+        extraHeaders: {
+          'Authorization': 'Bearer $token',
+          'AppID': 'e64af448-e2a8-4842-b859-2cfc824439d1',
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+      );
+
+      if (response["status"] == true) {
+        _transactionMessage = response["message"] ?? "✅ Your transfer was initiated! Funds have been sent to the bank.";
+
+        // Extract initialization_reference from the response data
+        String? initializationReference = response["data"]?["initialization_reference"];
+
+        return {
+          "success": true,
+          "message": _transactionMessage,
+          "initialization_reference": initializationReference,
+          "data": response["data"] // Optional: include full data if needed elsewhere
+        };
+      } else {
+        _transactionMessage = response["message"] ?? "❌ Transfer failed. Please check your details and try again.";
+        snacklen(_transactionMessage);
+        return {"success": false, "message": _transactionMessage};
+      }
+    } catch (e) {
+      _transactionMessage = "❌ We encountered an error while processing the transfer. Please try again.";
+      snacklen(_transactionMessage);
+
+      return {"success": false, "message": _transactionMessage};
+    }
+  }
+
+// Updated _confirmTransfer method
   void _confirmTransfer(WalletToBankTransferController controller) async {
-
     setState(() {
       isLoading = true;
     });
 
-    Navigator.pop(context); // Close the PIN modal
+    SmartDialog.showLoading(msg: "Please wait");
 
-    final result=await completeBankTransfer(sourceWallet: widget.wallet['wallet_number'],
-        destinationAccountNumber:_accountNumberController.text,
-        bankId:selectedBankId!,
-        amount: double.parse(_amountController.text.replaceAll(",", "")),
-        description:  _narrationController.text.isNotEmpty ? _narrationController.text : "Wallet to Bank Transfer",
+    final result_initialize = await initializeTransfer(
+        sourceWalletNumberOrUuid: widget.wallet['wallet_number'] ?? widget.wallet['uuid'],
+
+        transferAmount: double.parse(_amountController.text.replaceAll(",", "")),
+        transferPaymentScheme: selectedPaymentScheme,
+        transferDescription: _narrationController.text.isNotEmpty
+            ? _narrationController.text
+            : "Cross Border FX Transfer");
+
+
+    // Generate initialization reference if not already generated
+    if (result_initialize["success"] == true) {
+      // Get the initialization reference
+      String initializationReference = result_initialize["initialization_reference"];
+      print("Transfer initiated successfully!");
+      print("Initialization Reference: $initializationReference");
+
+      final result = await completeBankTransfer(
+        sourceWalletNumberOrUuid: widget.wallet['wallet_number'] ?? widget.wallet['uuid'],
+        transferPaymentScheme: selectedPaymentScheme,
+        transferAmount: double.parse(_amountController.text.replaceAll(",", "")),
+        transferDescription: _narrationController.text.isNotEmpty
+            ? _narrationController.text
+            : "Cross Border FX Transfer",
+        initializationReference: initializationReference!,
         transactionPin: _pinController.text,
-        saveBeneficiary: saveBeneficiary);
-
-
-
-
-
-
-    // 🧠 Attempt to save beneficiary only if transfer succeeded
-    if (saveBeneficiary && result["success"]) {
-      final saveResult = await controller.saveBeneficiary(
-        beneficiaryName: controller.beneficiaryName,
-        accountNumber: _accountNumberController.text,
-        bankId: selectedBankId!,
-        transactionPin: _pinController.text,
-        nickname: null,
+        beneficiaryFirstName: _firstNameController.text,
+        beneficiaryLastName: _lastNameController.text,
+        beneficiaryAccountNumber: _accountNumberController.text,
+        beneficiaryCountryCode: selectedCountryCode!,
+        beneficiaryEmail: _emailController.text,
+        beneficiaryBankCode: _bankCodeController.text,
+        beneficiaryBankSortCode: _bankSortCodeController.text,   // New field
+        beneficiaryBankSwiftCode: _bankSwiftCodeController.text, // New field
       );
 
-      // 🔁 Refresh saved beneficiaries list regardless of outcome
-       controller.fetchSavedBeneficiaries(); // ⬅️ Refetch and overwrite
+      setState(() {
+        isLoading = false;
 
-      if (!saveResult["success"] &&
-          !saveResult["message"]
-              .toString()
-              .contains("Beneficiary Identifier has already been taken")) {
-        _showResultDialog("⚠️ Transfer succeeded, but saving beneficiary failed: ${saveResult["message"]}");
+      });
+      SmartDialog.dismiss();
+
+      if (result['success']) {
+        _resetForm(); // Reset form on success
       }
+
+      Navigator.pushNamed(
+        context,
+        '/bank_result',
+        arguments: {
+          'success': result['success'],
+          'message': result['message'],
+          'data': result['data'],
+        },
+      );
+
+      // You can now use this reference for further processing
+      // e.g., store it, pass it to another function, etc.
+    } else {
+      SmartDialog.dismiss();
+      setState(() {
+        isLoading = false;
+
+      });
+
     }
 
-    setState(() {
-      isLoading = false;
-    });
-
-    if (result['success']) {
-      _resetForm(); // Reset form on success
-
-      // ✅ Refetch and store beneficiaries
-      await controller.fetchSavedBeneficiaries(); // This refetches and sets _savedBeneficiaries in controller
-
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('saved_beneficiaries', jsonEncode(controller.savedBeneficiaries));
-    }
-
-
-    Navigator.pushNamed(
-      context,
-      '/bank_result',
-      arguments: {
-        'success': result['success'],
-        'message': result['message'],
-        'data': result['data'],
-      },
-    );
   }
-
-
-
-
-  void _showResultDialog(String message) {
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: message.contains("✅")
-            ? const Text("✅ Transfer Successful")
-            : const Text("❌ Transfer Failed"),
-        content: Text(message),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context); // Close dialog
-
-              if (message.contains("✅")) {
-                // If successful, reload the page (reset everything)
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  final controller = Provider.of<WalletToBankTransferController>(context, listen: false);
-                  controller.fetchBanks();
-                  controller.fetchSourceWallets();
-                  controller.clearBeneficiaryName();
-                });
-                _resetForm();
-              }
-            },
-            child: const Text("OK"),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showSavedBeneficiaries(BuildContext context) {
-    final controller = Provider.of<WalletToBankTransferController>(context, listen: false);
-    final beneficiaries = controller.savedBeneficiaries;
-
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (_) => Container(
-        padding: const EdgeInsets.all(16),
-        height: MediaQuery.of(context).size.height * 0.5,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text("Saved Beneficiaries", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 12),
-            Expanded(
-              child: beneficiaries.isEmpty
-                  ? const Center(child: Text("You have no beneficiaries saved.")) // Updated text here
-                  : ListView.separated(
-                itemCount: beneficiaries.length,
-                separatorBuilder: (_, __) => const Divider(),
-                itemBuilder: (_, index) {
-                  final b = beneficiaries[index];
-                  return ListTile(
-                    title: Text(b['beneficiary_name'] ?? b['account_number']),
-                    subtitle: Text("${b['bank_name']} - ${b['account_number']}"),
-                    trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-                    onTap: () {
-                      Navigator.pop(context); // Close the bottom sheet
-                      setState(() {
-                        _accountNumberController.text = b["account_number"];
-                        selectedBankId = b["bank_id"];
-                        final bank = controller.banks.firstWhere(
-                              (bk) => bk['id'].toString() == b['bank_id'],
-                          orElse: () => {'bank_code': '', 'bank_name': ''},
-                        );
-                        selectedBank = bank['bank_code'];
-                      });
-                      controller.verifyBankAccount(
-                        accountNumber: b["account_number"],
-                        bankId: b["bank_id"],
-                      );
-                    },
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
 
 
 
@@ -702,9 +728,18 @@ class _WalletToBankTransferPageState extends State<WalletToBankTransferPageInten
     _amountController.clear();
     _narrationController.clear();
     _pinController.clear();
+    _firstNameController.clear();
+    _lastNameController.clear();
+    _emailController.clear();
+    _bankCodeController.clear();
+    _bankSortCodeController.clear();   // Clear new field
+    _bankSwiftCodeController.clear();  // Clear new field
+
     setState(() {
       selectedBank = null;
       selectedBankId = null;
+      selectedCountryCode = null;
+      selectedPaymentScheme = "swift";
     });
 
     final controller = Provider.of<WalletToBankTransferController>(context, listen: false);
@@ -717,23 +752,8 @@ class _WalletToBankTransferPageState extends State<WalletToBankTransferPageInten
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Wallet to Bank Transfer"),
-        // actions: [
-        //   TextButton.icon(
-        //     icon: const Icon(Icons.people_alt_outlined, color: Colors.black),
-        //     label: const Text(
-        //       "Saved Beneficiary",
-        //       style: TextStyle(color: Colors.black),
-        //     ),
-        //     onPressed: () {
-        //       _showSavedBeneficiaries(context);
-        //     },
-        //   ),
-        // ],
+        title: const Text("Cross Border Transfer"),
       ),
-
-
-
       body: Stack(
         children: [
           Padding(
@@ -744,257 +764,277 @@ class _WalletToBankTransferPageState extends State<WalletToBankTransferPageInten
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // Source Wallet Display
                     Container(
+
                       width: double.infinity,
+
                       padding: const EdgeInsets.all(32),
+
                       decoration: BoxDecoration(
+
                         color: Colors.white,
+
                         borderRadius: BorderRadius.circular(16),
+
                         border: Border.all(color: Colors.grey[200]!),
+
                       ),
+
                       child: Column(
+
                         children: [
-                          Text(
-                            "Source Wallet",
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: Colors.grey[600],
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
+
                           Text(
 
-                            NumberFormat("#,##0.00")
+                            "Source Wallet",
+
+                            style: TextStyle(
+
+                              fontSize: 16,
+
+                              color: Colors.grey[600],
+
+                              fontWeight: FontWeight.w500,
+
+                            ),
+
+                          ),
+
+                          const SizedBox(height: 8),
+
+                          Text(
+
+
+
+                            widget.wallet['currency']+ NumberFormat("#,##0.00")
+
                                 .format(double.tryParse(widget.wallet['balance'].toString())),
 
 
+
+
+
                             style: const TextStyle(
+
                               fontSize: 32,
+
                               fontWeight: FontWeight.bold,
+
                               color: Colors.black87,
+
                             ),
+
                           ),
+
                           const SizedBox(height: 4),
+
                           Text(
+
                             'Account: '+ widget.wallet['wallet_number'],textAlign: TextAlign.center,
+
                             style: TextStyle(
+
                               fontSize: 18,
+
                               color: Colors.grey[600],
+
                               fontWeight: FontWeight.w500,
+
                             ),
+
                           ),
+
                         ],
+
                       ),
+
                     ),
 
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 24),
 
-
-
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        TextButton.icon(
-                          onPressed: () => _showSavedBeneficiaries(context),
-                          icon: const Icon(Icons.people_alt_outlined, size: 18),
-                          label: const Text("Saved Beneficiary"),
-                          style: TextButton.styleFrom(
-                            foregroundColor: Color(0xFFEB6D00), // 👈 Orange text
-                            padding: EdgeInsets.zero,
-                            minimumSize: const Size(0, 30),
-                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                          ),
-                        ),
-                      ],
-                    ),
-
-                    const SizedBox(height: 2),
-
-
-                    const Text("Account Number"),
+                    // Beneficiary First Name
+                    const Text("First Name"),
                     TextFormField(
-                      controller: _accountNumberController,
-                      keyboardType: TextInputType.number,
+                      controller: _firstNameController,
                       decoration: const InputDecoration(
                         border: OutlineInputBorder(),
-                        // labelText: "Account Number",
+                        hintText: "Enter beneficiary's first name",
                       ),
-                      inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(10)],
-
-                      onChanged: (value) {
-                        final controller = Provider.of<WalletToBankTransferController>(context, listen: false);
-
-                        if (value.length >= 3) {
-                          final suggestions = controller.savedBeneficiaries.where((b) {
-                            return b['account_number'] != null &&
-                                b['account_number'].toString().contains(value);
-                          }).toList();
-
-                          setState(() {
-                            filteredSuggestions = suggestions;
-                            showSuggestions = suggestions.isNotEmpty;
-                          });
-                        } else {
-                          setState(() {
-                            showSuggestions = false;
-                          });
-                        }
-
-                        if (value.length == 10 && selectedBankId != null && selectedBankId != 'Unknown') {
-                          controller.verifyBankAccount(
-                            accountNumber: value,
-                            bankId: selectedBankId!,
-                          );
-                        }
-                      },
-
-
+                      validator: (value) => value!.isEmpty ? "First name is required" : null,
                     ),
-                    const SizedBox(height: 16),
-                    const Text("Select Bank"),
-                    DropdownSearch<Map<String, String>>(
-                      items: controller.banks.map<Map<String, String>>((bank) => {
-                        "bank_code": bank["bank_code"].toString(),
-                        "bank_name": bank["bank_name"].toString(),
-                      }).toList(),
-                      itemAsString: (bank) => bank["bank_name"]!,
-                      selectedItem: controller.banks
-                          .map<Map<String, String>>((bank) => {
-                        "bank_code": bank["bank_code"].toString(),
-                        "bank_name": bank["bank_name"].toString(),
-                      })
-                          .firstWhere(
-                            (bank) => bank["bank_code"] == selectedBank,
-                        orElse: () => {"bank_code": "", "bank_name": "Select Bank"},
-                      ),
-                      dropdownDecoratorProps: const DropDownDecoratorProps(
-                        dropdownSearchDecoration: InputDecoration(
-                          border: OutlineInputBorder(),
-                          // labelText: "Select Bank",
-                        ),
-                      ),
 
+                    const SizedBox(height: 16),
+
+                    // Beneficiary Last Name
+                    const Text("Last Name"),
+                    TextFormField(
+                      controller: _lastNameController,
+                      decoration: const InputDecoration(
+                        border: OutlineInputBorder(),
+                        hintText: "Enter beneficiary's last name",
+                      ),
+                      validator: (value) => value!.isEmpty ? "Last name is required" : null,
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // Email Address
+                    const Text("Email Address"),
+                    TextFormField(
+                      controller: _emailController,
+                      keyboardType: TextInputType.emailAddress,
+                      decoration: const InputDecoration(
+                        border: OutlineInputBorder(),
+                        hintText: "Enter beneficiary's email",
+                      ),
+                      validator: (value) {
+                        if (value!.isEmpty) return "Email is required";
+                        if (!value.contains('@')) return "Enter a valid email";
+                        return null;
+                      },
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // Country Code
+                    const Text("Beneficiary Country"),
+                    DropdownButtonFormField<String>(
+                      value: selectedCountryCode,
+                      decoration: const InputDecoration(
+                        border: OutlineInputBorder(),
+                      ),
+                      hint: const Text("Select country"),
+                      items: const [
+                        DropdownMenuItem(value: "US", child: Text("United States (US)")),
+                        DropdownMenuItem(value: "UK", child: Text("United Kingdom (UK)")),
+                        DropdownMenuItem(value: "CA", child: Text("Canada (CA)")),
+
+                      ],
                       onChanged: (value) {
                         setState(() {
-                          selectedBank = value?["bank_code"];
-                          selectedBankId = controller.banks.firstWhere(
-                                (bank) => bank['bank_code'].toString() == selectedBank,
-                            orElse: () => {'id': null},
-                          )['id']?.toString();
+                          selectedCountryCode = value;
                         });
-
-                        // ✅ Trigger verification if account number is already 10 digits
-                        final accountNumber = _accountNumberController.text;
-                        if (accountNumber.length == 10 && selectedBankId != null && selectedBankId != 'Unknown') {
-                          controller.verifyBankAccount(
-                            accountNumber: accountNumber,
-                            bankId: selectedBankId!,
-                          );
-                        }
                       },
-
-
-
-                      validator: (value) => value == null ? "Please select a bank" : null,
-                      popupProps: const PopupProps.menu(
-                        showSearchBox: true,
-                        searchFieldProps: TextFieldProps(
-                          decoration: InputDecoration(labelText: "Search Bank"),
-                        ),
-                      ),
+                      validator: (value) => value == null ? "Please select a country" : null,
                     ),
-
-
-
-                    if (showSuggestions)
-                      Container(
-                        constraints: const BoxConstraints(maxHeight: 150),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          border: Border.all(color: Colors.grey.shade300),
-                          borderRadius: BorderRadius.circular(4),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black12,
-                              blurRadius: 4,
-                              offset: Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: ListView.separated(
-                          shrinkWrap: true,
-                          itemCount: filteredSuggestions.length,
-                          separatorBuilder: (_, __) => Divider(height: 1),
-                          itemBuilder: (context, index) {
-                            final suggestion = filteredSuggestions[index];
-                            return ListTile(
-                              dense: true,
-                              title: Text(
-                                suggestion['beneficiary_name'] ?? suggestion['account_number'],
-                                style: TextStyle(color: Color(0xFFEB6D00)),
-                              ),
-                              subtitle: Text(
-                                "${suggestion['bank_name']} - ${suggestion['account_number']}",
-                                style: TextStyle(color: Color(0xFFEB6D00)),
-                              ),
-
-                              onTap: () {
-                                setState(() {
-                                  _accountNumberController.text = suggestion['account_number'];
-                                  selectedBankId = suggestion['bank_id'];
-                                  showSuggestions = false;
-
-                                  final bank = controller.banks.firstWhere(
-                                        (bk) => bk['id'].toString() == suggestion['bank_id'],
-                                    orElse: () => {'bank_code': '', 'bank_name': ''},
-                                  );
-                                  selectedBank = bank['bank_code'];
-                                });
-
-                                controller.verifyBankAccount(
-                                  accountNumber: suggestion['account_number'],
-                                  bankId: suggestion['bank_id'],
-                                );
-                              },
-                            );
-                          },
-                        ),
-                      ),
-
-                    const SizedBox(height: 8),
-
-                    controller.isVerifyingWallet
-                        ? const CircularProgressIndicator()
-                        : Text(
-                      controller.beneficiaryName.isNotEmpty
-                          ? "Beneficiary: ${controller.beneficiaryName}"
-                          : "Enter account number to verify",
-                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                    ),
-
 
                     const SizedBox(height: 16),
 
+                    // Bank Code
+                    const Text("Beneficiary Bank Code"),
+                    TextFormField(
+                      controller: _bankCodeController,
+                      decoration: const InputDecoration(
+                        border: OutlineInputBorder(),
+                        hintText: "Enter bank routing/sort code",
+                      ),
+                      validator: (value) => value!.isEmpty ? "Bank code is required" : null,
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // Account Number
+                    const Text("Beneficiary Account Number"),
+                    TextFormField(
+                      controller: _accountNumberController,
+                      keyboardType: TextInputType.text,
+                      decoration: const InputDecoration(
+                        border: OutlineInputBorder(),
+                        hintText: "Enter account number",
+                      ),
+                      validator: (value) => value!.isEmpty ? "Account number is required" : null,
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // Payment Scheme
+                    const Text("Payment Scheme"),
+                    DropdownButtonFormField<String>(
+                      value: selectedPaymentScheme,
+                      decoration: const InputDecoration(
+                        border: OutlineInputBorder(),
+                      ),
+                      items: const [
+                        DropdownMenuItem(value: "swift", child: Text("SWIFT")),
+                        DropdownMenuItem(value: "ach", child: Text("ACH")),
+                        DropdownMenuItem(value: "fed_wire", child: Text("FED WIRE")),
+                        DropdownMenuItem(value: "fps", child: Text("FPS")),
+                        DropdownMenuItem(value: "sepa", child: Text("SEPA")),
+                        DropdownMenuItem(value: "sepa_instant", child: Text("SEPA INSTANT")),
+
+
+
+                      ],
+                      onChanged: (value) {
+                        setState(() {
+                          selectedPaymentScheme = value!;
+                        });
+                      },
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // NEW FIELD: Bank Sort Code
+                    const Text("Beneficiary Bank Sort Code"),
+                    TextFormField(
+                      controller: _bankSortCodeController,
+                      decoration: const InputDecoration(
+                        border: OutlineInputBorder(),
+                        hintText: "Enter bank sort code",
+                      ),
+                      validator: (value) => value!.isEmpty ? "Bank sort code is required" : null,
+                    ),
+
+                    const SizedBox(height: 16),
+
+// NEW FIELD: Bank SWIFT Code
+                    const Text("Beneficiary Bank SWIFT Code"),
+                    TextFormField(
+                      controller: _bankSwiftCodeController,
+                      decoration: const InputDecoration(
+                        border: OutlineInputBorder(),
+                        hintText: "Enter SWIFT/BIC code (e.g., ABCDUS33)",
+                      ),
+                      validator: (value) {
+                        if (value!.isEmpty) return "SWIFT code is required";
+                        if (value.length < 8 || value.length > 11) {
+                          return "SWIFT code must be 8-11 characters";
+                        }
+                        return null;
+                      },
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // Amount
                     const Text("Amount"),
                     TextFormField(
                       controller: _amountController,
                       keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(border: OutlineInputBorder()),
+                      decoration: const InputDecoration(
+                        border: OutlineInputBorder(),
+                        hintText: "Enter amount",
+                      ),
                       inputFormatters: [CurrencyInputFormatter()],
                       validator: (value) => value!.isEmpty ? "Enter a valid amount" : null,
                     ),
 
                     const SizedBox(height: 16),
 
-                    const Text("Narration (Optional)"),
+                    // Narration
+                    const Text("Description (Optional)"),
                     TextFormField(
                       controller: _narrationController,
                       decoration: const InputDecoration(
                         border: OutlineInputBorder(),
-                        // labelText: "Narration (Optional)",
+                        hintText: "Enter transfer description",
                       ),
                     ),
+/*
+                    const SizedBox(height: 16),
+
+                    // Save Beneficiary Checkbox
 
                     CheckboxListTile(
                       title: const Text("Save as Beneficiary"),
@@ -1008,14 +1048,22 @@ class _WalletToBankTransferPageState extends State<WalletToBankTransferPageInten
                       contentPadding: EdgeInsets.zero,
                     ),
 
-                    const SizedBox(height: 16),
+ */
 
+                    const SizedBox(height: 24),
+
+                    // Confirm Button
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
                         onPressed: () {
-                          if (_formKey.currentState!.validate()) {
+                          if (_formKey.currentState!.validate() &&
+                              selectedCountryCode != null) {
                             _showTransactionSummary();
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text("Please fill all required fields")),
+                            );
                           }
                         },
                         style: ElevatedButton.styleFrom(
@@ -1050,4 +1098,37 @@ class _WalletToBankTransferPageState extends State<WalletToBankTransferPageInten
       ),
     );
   }
+
+
+  void _showResultDialog(String message) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: message.contains("✅")
+            ? const Text("✅ Transfer Successful")
+            : const Text("❌ Transfer Failed"),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context); // Close dialog
+
+              if (message.contains("✅")) {
+                // If successful, reload the page (reset everything)
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  final controller = Provider.of<WalletToBankTransferController>(context, listen: false);
+                  controller.fetchBanks();
+                  controller.fetchSourceWallets();
+                  controller.clearBeneficiaryName();
+                });
+                _resetForm();
+              }
+            },
+            child: const Text("OK"),
+          ),
+        ],
+      ),
+    );
+  }
+
 }

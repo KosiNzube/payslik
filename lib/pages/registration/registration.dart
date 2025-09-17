@@ -1056,7 +1056,11 @@ class _RegistrationPageState extends State<RegistrationPage> {
               ),
 
 
-              if(identityCode=='0061')
+
+              //CHECK FOR IDENTITY CODE 0061
+
+
+              if(identityCode=='0061')...[
                 isCurrencyLoading
                     ? const Center(child: CircularProgressIndicator())
                     : _buildDropdown(
@@ -1078,11 +1082,11 @@ class _RegistrationPageState extends State<RegistrationPage> {
                   },
                 ),
                 const SizedBox(height: 16),
-
-
-              if(identityCode=="0075")
-                  const SizedBox(height: 16),
-                  TextFormField(
+              ],
+              // Wrap the entire section in a conditional check
+              if (identityCode == "0075") ...[
+                const SizedBox(height: 16),
+                TextFormField(
                   controller: pf_number,
                   style: inputTextStyle,
                   decoration: _buildInputDecoration("PF Number"),
@@ -1125,63 +1129,62 @@ class _RegistrationPageState extends State<RegistrationPage> {
                   },
                 ),
 
+                const SizedBox(height: 12),
 
-              const SizedBox(height: 12),
-
-              // Display verified name
-              if (_isLedgerVerified && _verifiedName != null) ...[
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.green.shade50,
-                    border: Border.all(color: Colors.green.shade200),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(Icons.person, color: Colors.green.shade600, size: 20),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          'Verified: $_verifiedName',
-                          style: TextStyle(
-                            color: Colors.green.shade700,
-                            fontWeight: FontWeight.w500,
+                // Display verified name
+                if (_isLedgerVerified && _verifiedName != null) ...[
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.green.shade50,
+                      border: Border.all(color: Colors.green.shade200),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.person, color: Colors.green.shade600, size: 20),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Verified: $_verifiedName',
+                            style: TextStyle(
+                              color: Colors.green.shade700,
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                ],
 
-              // Display error message
-              if (_ledgerErrorMessage != null) ...[
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.red.shade50,
-                    border: Border.all(color: Colors.red.shade200),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Icon(Icons.error_outline, color: Colors.red.shade600, size: 20),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          _ledgerErrorMessage!,
-                          style: TextStyle(
-                            color: Colors.red.shade700,
-                            fontSize: 14,
+                // Display error message
+                if (_ledgerErrorMessage != null) ...[
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.red.shade50,
+                      border: Border.all(color: Colors.red.shade200),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(Icons.error_outline, color: Colors.red.shade600, size: 20),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            _ledgerErrorMessage!,
+                            style: TextStyle(
+                              color: Colors.red.shade700,
+                              fontSize: 14,
+                            ),
                           ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                ],
 
                 const SizedBox(height: 16),
                 TextFormField(
@@ -1195,6 +1198,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
                     return null; // Return null if valid
                   },
                 ),
+              ],
 
 
             ]),
