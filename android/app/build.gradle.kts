@@ -15,7 +15,7 @@ if (keystorePropertiesFile.exists()) {
 }
 
 android {
-    namespace = "com.faithblez.gb"
+    namespace = "com.ebowallet.gb"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = "27.0.12077973"
 
@@ -38,7 +38,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.faithblez.gb"
+        applicationId = "com.ebowallet.gb"
         minSdk = 21
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
