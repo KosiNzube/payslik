@@ -133,7 +133,7 @@ class _MoreMenuPageState extends State<MoreMenuPage> {
 
       // Add individual bank transfer icon
       if (_menuItems['display-bank-transfer-menu'] == true) {
-        cards.add(_buildMenuCard(context, icon: Icons.swap_horiz, label: "To Bank ", route: Routes.bank_transfer, index: index++));
+        cards.add(_buildMenuCard(context, icon: Icons.swap_horiz, label: "To Bank", route: Routes.bank_transfer, index: index++));
       }
 
 
@@ -358,7 +358,7 @@ class _MoreMenuPageState extends State<MoreMenuPage> {
         return Image.asset('assets/tether.png', height: 18, width: 18);
       case "USDC":
         return Image.asset('assets/usdc.png', height: 18, width: 18);
-      case "CBC":
+      case "SLC":
         return Image.asset('assets/carbon.png', height: 18, width: 18);
 
     // Default fallback

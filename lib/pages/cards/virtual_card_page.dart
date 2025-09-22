@@ -153,31 +153,134 @@ class _VirtualCardPageState extends State<VirtualCardPage> {
                     ? Center(
                   child: snapshot.connectionState == ConnectionState.waiting
                       ? const CircularProgressIndicator()
-                      : isKycComplete
-                      ? ElevatedButton.icon(
-                    onPressed: () => _showCreateCardModal(context, controller),
-                    icon: const Icon(Icons.add),
-                    label: const Text("Create Virtual Card"),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: _secondaryColor ?? Colors.blue,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                      textStyle: const TextStyle(fontSize: 16),
-                    ),
-                  )
-                      : ElevatedButton.icon(
-                    onPressed: () {
-                      Navigator.pushNamed(context, '/profile');
-                    },
-                    icon: const Icon(Icons.warning),
-                    label: const Text("Complete KYC"),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.orange,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                      textStyle: const TextStyle(fontSize: 16),
-                    ),
-                  ),
+                      : SingleChildScrollView(
+                        child: Container(
+                                            constraints: const BoxConstraints(maxWidth: 400),
+                                            padding: const EdgeInsets.all(24),
+                                            child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          // Card Icon
+                          Container(
+                            width: 80,
+                            height: 80,
+                            decoration: BoxDecoration(
+                              color: (_secondaryColor ?? Colors.blue).withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(40),
+                            ),
+                            child: Icon(
+                              Icons.credit_card,
+                              size: 40,
+                              color: _secondaryColor ?? Colors.blue,
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                        
+                          // Main Message
+                           Text(
+                            "You don't have any virtual cards yet.",
+                            style: GoogleFonts.poppins(
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black87,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 12),
+                        
+                          // Subtitle
+                          const Text(
+                            "Create one to enjoy secure and instant online payments.",
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: Colors.black54,
+                              height: 1.4,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 32),
+                        
+                          // Create Button
+                          isKycComplete
+                              ? SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton.icon(
+                              onPressed: () => _showCreateCardModal(context, controller),
+                              icon: const Icon(Icons.add, size: 20),
+                              label: const Text("Create Virtual Card"),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: _secondaryColor ?? Colors.blue,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                textStyle: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                elevation: 0,
+                              ),
+                            ),
+                          )
+                              : SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton.icon(
+                              onPressed: () {
+                                Navigator.pushNamed(context, '/profile');
+                              },
+                              icon: const Icon(Icons.warning_rounded, size: 20),
+                              label: const Text("Complete KYC"),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.orange,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                textStyle: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                elevation: 0,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 40),
+                        
+                          // Benefits Section
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(20),
+                            decoration: BoxDecoration(
+                              color: Colors.grey.shade50,
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(color: Colors.grey.shade200),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  "Benefits of a Virtual Card:",
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.black87,
+                                  ),
+                                ),
+                                const SizedBox(height: 16),
+                                _buildBenefitItem("Fund instantly from your wallet"),
+                                const SizedBox(height: 12),
+                                _buildBenefitItem("Shop securely online"),
+                                const SizedBox(height: 12),
+                                _buildBenefitItem("Control and limit spending"),
+                              ],
+                            ),
+                          ),
+                        ],
+                                            ),
+                                          ),
+                      ),
                 )
                     : _buildCardContent(controller.virtualCards.first,transferController),
               ),
@@ -203,7 +306,32 @@ class _VirtualCardPageState extends State<VirtualCardPage> {
     return [];
   }
 
-
+  Widget _buildBenefitItem(String text) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          margin: const EdgeInsets.only(top: 2),
+          child: Icon(
+            Icons.check_circle,
+            size: 18,
+            color: Colors.green.shade600,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Text(
+            text,
+            style: const TextStyle(
+              fontSize: 15,
+              color: Colors.black87,
+              height: 1.3,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
 
 
   Widget _buildCardContent(Map<String, dynamic> card, tcontroller) {

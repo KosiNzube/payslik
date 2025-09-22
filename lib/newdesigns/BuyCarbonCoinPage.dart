@@ -108,10 +108,14 @@ class _BuySolarCoinPageState extends State<BuySolarCoinPage> {
         setState(() {
           agents = agentsData.map((data) => Agent.fromJson(data)).toList();
           // Filter agents who have buy rates
+
+          /*
           agents = agents.where((agent) =>
           agent.tradingRates.containsKey('cc-cbc-buy-rate') &&
               agent.tradingRates['cc-cbc-buy-rate'] != null
           ).toList();
+
+           */
         });
       } else {
         _showErrorSnackbar('Failed to load agents: ${response['message']}');
@@ -655,48 +659,50 @@ class _BuySolarCoinPageState extends State<BuySolarCoinPage> {
                       Text(
                         agent.fullName,
                         style: const TextStyle(
-                          fontWeight: FontWeight.w600,
-                          fontSize: 18, // iOS heading size
+                          fontWeight: FontWeight.w500,
+                          fontSize: 15, // iOS heading size
                           height: 1.2, // Line height for readability
                         ),
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        'ID: ${agent.id.substring(0, 8)}...',
+                        'ID: ${agent.id.substring(0, 15)}...',
                         style: TextStyle(
-                          color: Colors.grey,
+                          color: CupertinoColors.systemGrey,
                           fontSize: 14, // Secondary label size
                         ),
                       ),
                     ],
                   ),
                 ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: isAvailable
-                        ? CupertinoColors.systemGreen.withOpacity(0.15)
-                        : CupertinoColors.systemRed.withOpacity(0.15),
-                    borderRadius: const BorderRadius.all(Radius.circular(12)),
-                    border: Border.all(
-                      color: isAvailable
-                          ? CupertinoColors.systemGreen.withOpacity(0.3)
-                          : CupertinoColors.systemRed.withOpacity(0.3),
-                      width: 1,
-                    ),
-                  ),
-                  child: Text(
-                    isAvailable ? 'Available' : 'Unavailable',
-                    style: TextStyle(
-                      color: isAvailable
-                          ? CupertinoColors.systemGreen
-                          : CupertinoColors.systemRed,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
               ],
+            ),
+            const SizedBox(height: 10), // Vertical spacing for clean separation
+
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: isAvailable
+                    ? CupertinoColors.systemGreen.withOpacity(0.15)
+                    : CupertinoColors.systemRed.withOpacity(0.15),
+                borderRadius: const BorderRadius.all(Radius.circular(12)),
+                border: Border.all(
+                  color: isAvailable
+                      ? CupertinoColors.systemGreen.withOpacity(0.3)
+                      : CupertinoColors.systemRed.withOpacity(0.3),
+                  width: 1,
+                ),
+              ),
+              child: Text(
+                isAvailable ? 'Available' : 'Unavailable',
+                style: TextStyle(
+                  color: isAvailable
+                      ? CupertinoColors.systemGreen
+                      : CupertinoColors.systemRed,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
             ),
             const SizedBox(height: 16), // Vertical spacing for clean separation
             Row(

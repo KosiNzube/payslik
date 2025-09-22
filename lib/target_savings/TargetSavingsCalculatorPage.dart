@@ -29,7 +29,6 @@ class _TargetSavingsCalculatorPageState extends State<TargetSavingsCalculatorPag
   final _durationController = TextEditingController();
   bool _hasCalculated = false;
   bool _autoDebit = true;
-  String _frequency = 'monthly';
   Color? _primaryColor;
   Color? _secondaryColor;
 
@@ -259,7 +258,7 @@ class _TargetSavingsCalculatorPageState extends State<TargetSavingsCalculatorPag
                   controller: _durationController,
                   keyboardType: TextInputType.number,
                   decoration: InputDecoration(
-                    labelText: 'Duration (months)',
+                    labelText: 'Duration',
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -285,13 +284,13 @@ class _TargetSavingsCalculatorPageState extends State<TargetSavingsCalculatorPag
 
                 // Frequency Dropdown
                 DropdownButtonFormField<String>(
-                  value: _frequency,
+                  value: widget.product['saving_recursive_cycle'],
                   items: const [
                     DropdownMenuItem(value: 'daily', child: Text('Daily')),
                     DropdownMenuItem(value: 'weekly', child: Text('Weekly')),
                     DropdownMenuItem(value: 'monthly', child: Text('Monthly')),
                   ],
-                  onChanged: (value) => setState(() => _frequency = value!),
+                  onChanged: (value) => setState(() => widget.product['saving_recursive_cycle'] = value!),
                   decoration: InputDecoration(
                     labelText: 'Savings Frequency',
                     border: OutlineInputBorder(
@@ -358,14 +357,14 @@ class _TargetSavingsCalculatorPageState extends State<TargetSavingsCalculatorPag
             const SizedBox(height: 16),
             _buildSummaryRow('Target Amount',
                 '₦${NumberFormat('#,##0').format(targetAmount)}'),
-            _buildSummaryRow('Monthly Savings',
+            _buildSummaryRow('Savings',
                 '₦${NumberFormat('#,##0').format(monthlySavings)}'),
             _buildSummaryRow('Total Interest',
                 '₦${NumberFormat('#,##0').format(totalInterest)}'),
             _buildSummaryRow('Total Savings',
                 '₦${NumberFormat('#,##0').format(totalSavings)}'),
             _buildSummaryRow('Duration', '${_durationController.text} months'),
-            _buildSummaryRow('Frequency', _frequency),
+            _buildSummaryRow('Frequency', widget.product['saving_recursive_cycle']),
 
             const SizedBox(height: 24),
             SizedBox(
@@ -401,7 +400,7 @@ class _TargetSavingsCalculatorPageState extends State<TargetSavingsCalculatorPag
                         productName: widget.productName,
                         targetAmount: targetAmountValue,
                         duration: durationValue,
-                        frequency: _frequency,
+                        frequency: widget.product['saving_recursive_cycle'],
                         autoDebit: _autoDebit,
                         calculationResult: result,
                       ),

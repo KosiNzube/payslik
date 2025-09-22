@@ -345,7 +345,7 @@ class _QuickActionsGridState extends State<QuickActionsGrid> {
         return Image.asset('assets/tether.png', height: 18, width: 18);
       case "USDC":
         return Image.asset('assets/usdc.png', height: 18, width: 18);
-      case "CBC":
+      case "SLC":
         return Image.asset('assets/carbon.png', height: 18, width: 18);
     // Default fallback
       default:

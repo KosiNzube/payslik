@@ -7,6 +7,8 @@ import 'package:gobeller/controller/create_wallet_controller.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../WalletProviders/General_Wallet_Provider.dart';
+import '../../../controller/WalletTransactionController.dart';
+import '../../../controller/profileControllers.dart';
 import '../../success/DASHBOARD_Y.dart';
 import 'widget/wallet_list.dart';
 
@@ -92,19 +94,23 @@ class _FXWalletPageState extends State<FXWalletPage> {
 
 
 // Add a refresh method for manual refresh
-  Future<void> _refreshWallets(BuildContext context) async {
-    try {
-      // Access the GeneralWalletProvider and call refreshCryptoWallets
-      await Provider.of<GeneralWalletProvider>(context, listen: false)
-          .refreshCryptoWallets();
-    } catch (e) {
-      // Handle any errors during refresh
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to refresh crypto wallets: $e'),
-        ),
-      );
+  Future<void> _refreshWallets() async {
+
+    final profile = await ProfileController.fetchUserProfile();
+
+    if (profile != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        context.read<GeneralWalletProvider>().loadWallets();
+      });
+
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        Provider.of<WalletTransactionController>(context, listen: false)
+            .fetchWalletTransactions(refresh: false);
+      });
     }
+
+    setState(() {
+    });
   }
 
 
@@ -341,7 +347,7 @@ class _FXWalletPageState extends State<FXWalletPage> {
                           final result = await CurrencyController.createWallet(requestBody);
 
                           if (result["status"] == "success" || result["status"] == true) {
-                            await _refreshWallets(context);
+                            await _refreshWallets();
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(content: Text("Wallet created successfully.")),
                             );
@@ -418,7 +424,7 @@ class _FXWalletPageState extends State<FXWalletPage> {
         actions: [
           IconButton(
             icon: const Icon(CupertinoIcons.arrow_2_circlepath),
-            onPressed:(){  _refreshWallets(context);}
+            onPressed:(){  _refreshWallets();}
           ),
         ],
       ),

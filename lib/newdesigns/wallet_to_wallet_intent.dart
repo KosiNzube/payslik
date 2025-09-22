@@ -142,274 +142,284 @@ class _WalletToWalletTransferPageState extends State<WalletToWalletTransferPageI
   void showTransactionSummaryModal(WalletTransferController controller) async {
     final primaryColor = await _getColorFromPrefs('customized-app-primary-color', const Color(0xFF171E3B));
     final secondaryColor = await _getColorFromPrefs('customized-app-secondary-color', const Color(0xFFEB6D00));
-    FocusScope.of(context).unfocus();
 
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setModalState) {
-            return Padding(
-              padding: EdgeInsets.only(
-                bottom: MediaQuery.of(context).viewInsets.bottom,
-              ),
-              child: Container(
-                height: MediaQuery.of(context).size.height * 0.85,
-                decoration: const BoxDecoration(
-                  color: Color(0xFFF8F9FA),
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
-                ),
-                child: Stack(
-                  children: [
-                    // Make the main content scrollable
-                    SingleChildScrollView(
-                      child: Column(
-                        children: [
-                          // Handle bar
-                          Container(
-                            margin: const EdgeInsets.only(top: 12, bottom: 20),
-                            width: 40,
-                            height: 4,
-                            decoration: BoxDecoration(
-                              color: Colors.grey[300],
-                              borderRadius: BorderRadius.circular(2),
+    // Hide keyboard first (more direct than FocusScope.of(context).unfocus())
+    FocusManager.instance.primaryFocus?.unfocus();
+
+    // Wait a frame so MediaQuery updates after keyboard dismissal
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      // If this method lives inside a State class, keep this check:
+      if (!mounted) return;
+
+      final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+      final height = MediaQuery.of(context).size.height * 0.85;
+
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (context) {
+          return StatefulBuilder(
+            builder: (context, setModalState) {
+              return Padding(
+                padding: EdgeInsets.only(bottom: bottomInset),
+                child: Container(
+                  height: height,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFF8F9FA),
+                    borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
+                  ),
+                  child: Stack(
+                    children: [
+                      // Make the main content scrollable
+                      SingleChildScrollView(
+                        child: Column(
+                          children: [
+                            // Handle bar
+                            Container(
+                              margin: const EdgeInsets.only(top: 12, bottom: 20),
+                              width: 40,
+                              height: 4,
+                              decoration: BoxDecoration(
+                                color: Colors.grey[300],
+                                borderRadius: BorderRadius.circular(2),
+                              ),
                             ),
-                          ),
 
-                          // Header
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 24),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                const Text(
-                                  "Kindly review details",
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    color: Colors.black,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                                TextButton(
-                                  onPressed: () => Navigator.pop(context),
-                                  child: const Text(
-                                    "Change",
+                            // Header
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 24),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  const Text(
+                                    "Kindly review details",
                                     style: TextStyle(
-                                      color: Color(0xFF007AFF),
-                                      fontSize: 16,
+                                      fontSize: 18,
+                                      color: Colors.black,
                                       fontWeight: FontWeight.w500,
                                     ),
                                   ),
-                                ),
-                              ],
-                            ),
-                          ),
-
-                          // Transaction Details Card
-                          Container(
-                            margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-                            padding: const EdgeInsets.all(24),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(16),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.04),
-                                  blurRadius: 10,
-                                  offset: const Offset(0, 2),
-                                ),
-                              ],
-                            ),
-                            child: Column(
-                              children: [
-                                _buildDetailRow("AMOUNT TO TRANSFER", "${formatNumber(_amountController.text)}", isAmount: true),
-                                const SizedBox(height: 20),
-                                _buildDetailRow("TRANSACTION TYPE", "Wallet to Wallet Transfer"),
-                                const SizedBox(height: 20),
-                                _buildDetailRow("CURRENCY", controller.transactionCurrency),
-                                const SizedBox(height: 20),
-                                _buildDetailRow("ACTUAL BALANCE BEFORE", "${controller.transactionCurrencySymbol} ${controller.actualBalanceBefore}"),
-                                const SizedBox(height: 20),
-                                _buildDetailRow("PLATFORM CHARGE FEE", "${controller.transactionCurrencySymbol} ${controller.platformChargeFee}"),
-                                const SizedBox(height: 20),
-                                _buildDetailRow("EXPECTED BALANCE AFTER", "${controller.transactionCurrencySymbol} ${formatNumber(controller.expectedBalanceAfter.toString())}"),
-                              ],
-                            ),
-                          ),
-
-                          // PIN Section
-                          const Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 24),
-                            child: Text(
-                              "Enter PIN to confirm",
-                              style: TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.black87,
+                                  TextButton(
+                                    onPressed: () => Navigator.pop(context),
+                                    child: const Text(
+                                      "Change",
+                                      style: TextStyle(
+                                        color: Color(0xFF007AFF),
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
-                          ),
-                          const SizedBox(height: 24),
 
-                          // PIN Display
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 24),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: List.generate(4, (index) {
-                                return Container(
-                                  margin: const EdgeInsets.symmetric(horizontal: 8),
-                                  width: 50,
-                                  height: 50,
-                                  decoration: BoxDecoration(
-                                    border: Border.all(
-                                      color: _pinController.text.length > index ? Colors.black87 : Colors.grey[300]!,
-                                      width: 2,
-                                    ),
-                                    borderRadius: BorderRadius.circular(8),
+                            // Transaction Details Card
+                            Container(
+                              margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+                              padding: const EdgeInsets.all(24),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(16),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.04),
+                                    blurRadius: 10,
+                                    offset: const Offset(0, 2),
                                   ),
-                                  child: Center(
-                                    child: _pinController.text.length > index
-                                        ? Container(
-                                      width: 12,
-                                      height: 12,
-                                      decoration: const BoxDecoration(
-                                        color: Colors.black87,
-                                        shape: BoxShape.circle,
-                                      ),
-                                    )
-                                        : null,
-                                  ),
-                                );
-                              }),
+                                ],
+                              ),
+                              child: Column(
+                                children: [
+                                  _buildDetailRow("AMOUNT TO TRANSFER", "${formatNumber(_amountController.text)}", isAmount: true),
+                                  const SizedBox(height: 20),
+                                  _buildDetailRow("TRANSACTION TYPE", "Wallet to Wallet Transfer"),
+                                  const SizedBox(height: 20),
+                                  _buildDetailRow("CURRENCY", controller.transactionCurrency),
+                                  const SizedBox(height: 20),
+                                  _buildDetailRow("ACTUAL BALANCE BEFORE", "${controller.transactionCurrencySymbol} ${controller.actualBalanceBefore}"),
+                                  const SizedBox(height: 20),
+                                  _buildDetailRow("PLATFORM CHARGE FEE", "${controller.transactionCurrencySymbol} ${controller.platformChargeFee}"),
+                                  const SizedBox(height: 20),
+                                  _buildDetailRow("EXPECTED BALANCE AFTER", "${controller.transactionCurrencySymbol} ${formatNumber(controller.expectedBalanceAfter.toString())}"),
+                                ],
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: 24), // Reduced from 32
 
-                          // Custom PIN Pad - Made more compact
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 40),
-                            child: Column(
-                              children: [
-                                _buildPinRow(['1', '2', '3'], setModalState),
-                                const SizedBox(height: 12), // Reduced from 16
-                                _buildPinRow(['4', '5', '6'], setModalState),
-                                const SizedBox(height: 12), // Reduced from 16
-                                _buildPinRow(['7', '8', '9'], setModalState),
-                                const SizedBox(height: 12), // Reduced from 16
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                                  children: [
-                                    const SizedBox(width: 60), // Empty space
-                                    _buildPinButton('0', setModalState),
-                                    GestureDetector(
-                                      onTap: () {
-                                        if (_pinController.text.isNotEmpty) {
-                                          setModalState(() {
-                                            _pinController.text = _pinController.text
-                                                .substring(0, _pinController.text.length - 1);
-                                          });
-                                        }
-                                      },
-                                      child: Container(
-                                        width: 60,
-                                        height: 60,
-                                        decoration: BoxDecoration(
-                                          color: Colors.grey[100],
+                            // PIN Section
+                            const Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 24),
+                              child: Text(
+                                "Enter PIN to confirm",
+                                style: TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 24),
+
+                            // PIN Display
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 24),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: List.generate(4, (index) {
+                                  return Container(
+                                    margin: const EdgeInsets.symmetric(horizontal: 8),
+                                    width: 50,
+                                    height: 50,
+                                    decoration: BoxDecoration(
+                                      border: Border.all(
+                                        color: _pinController.text.length > index ? Colors.black87 : Colors.grey[300]!,
+                                        width: 2,
+                                      ),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Center(
+                                      child: _pinController.text.length > index
+                                          ? Container(
+                                        width: 12,
+                                        height: 12,
+                                        decoration: const BoxDecoration(
+                                          color: Colors.black87,
                                           shape: BoxShape.circle,
                                         ),
-                                        child: const Icon(
-                                          Icons.backspace_outlined,
-                                          size: 24,
-                                          color: Colors.black87,
+                                      )
+                                          : null,
+                                    ),
+                                  );
+                                }),
+                              ),
+                            ),
+                            const SizedBox(height: 24), // Reduced from 32
+
+                            // Custom PIN Pad - Made more compact
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 40),
+                              child: Column(
+                                children: [
+                                  _buildPinRow(['1', '2', '3'], setModalState),
+                                  const SizedBox(height: 12), // Reduced from 16
+                                  _buildPinRow(['4', '5', '6'], setModalState),
+                                  const SizedBox(height: 12), // Reduced from 16
+                                  _buildPinRow(['7', '8', '9'], setModalState),
+                                  const SizedBox(height: 12), // Reduced from 16
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                    children: [
+                                      const SizedBox(width: 60), // Empty space
+                                      _buildPinButton('0', setModalState),
+                                      GestureDetector(
+                                        onTap: () {
+                                          if (_pinController.text.isNotEmpty) {
+                                            setModalState(() {
+                                              _pinController.text = _pinController.text
+                                                  .substring(0, _pinController.text.length - 1);
+                                            });
+                                          }
+                                        },
+                                        child: Container(
+                                          width: 60,
+                                          height: 60,
+                                          decoration: BoxDecoration(
+                                            color: Colors.grey[100],
+                                            shape: BoxShape.circle,
+                                          ),
+                                          child: const Icon(
+                                            Icons.backspace_outlined,
+                                            size: 24,
+                                            color: Colors.black87,
+                                          ),
                                         ),
                                       ),
-                                    ),
-                                  ],
-                                ),
-                              ],
+                                    ],
+                                  ),
+                                ],
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: 24), // Reduced from 40
+                            const SizedBox(height: 24), // Reduced from 40
 
-                          // Action Buttons
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 24),
-                            child: SizedBox(
-                              width: double.infinity,
-                              height: 56,
-                              child: ElevatedButton(
-                                onPressed: _pinController.text.length == 4 && !_isCompletingTransfer
-                                    ? () async {
-                                  if (selectedSourceWallet == null) return;
+                            // Action Buttons
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 24),
+                              child: SizedBox(
+                                width: double.infinity,
+                                height: 56,
+                                child: ElevatedButton(
+                                  onPressed: _pinController.text.length == 4 && !_isCompletingTransfer
+                                      ? () async {
+                                    if (selectedSourceWallet == null) return;
 
-                                  setModalState(() => _isCompletingTransfer = true);
+                                    setModalState(() => _isCompletingTransfer = true);
 
-                                  SmartDialog.showLoading(msg: "Please wait");
+                                    SmartDialog.showLoading(msg: "Please wait");
 
-                                  final result = await controller.completeTransfer(
-                                    sourceWallet: selectedSourceWallet!,
-                                    destinationWallet: _destWalletController.text.trim(),
-                                    amount: double.parse(_amountController.text.replaceAll(",","")),
-                                    description: _narrationController.text.trim(),
-                                    transactionPin: _pinController.text.trim(),
-                                  );
+                                    final result = await controller.completeTransfer(
+                                      sourceWallet: selectedSourceWallet!,
+                                      destinationWallet: _destWalletController.text.trim(),
+                                      amount: double.parse(_amountController.text.replaceAll(",","")),
+                                      description: _narrationController.text.trim(),
+                                      transactionPin: _pinController.text.trim(),
+                                    );
 
-                                  if (mounted) {
-                                    setModalState(() => _isCompletingTransfer = false);
-                                    _navigateToTransferResult(result['success'], result['message']);
+                                    if (mounted) {
+                                      setModalState(() => _isCompletingTransfer = false);
+                                      _navigateToTransferResult(result['success'], result['message']);
+                                    }
+
+                                    SmartDialog.dismiss();
                                   }
-
-                                  SmartDialog.dismiss();
-                                }
-                                    : null,
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: _pinController.text.length == 4 && !_isCompletingTransfer
-                                      ? secondaryColor
-                                      : Colors.grey[300],
-                                  foregroundColor: Colors.white,
-                                  elevation: 0,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(16),
+                                      : null,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: _pinController.text.length == 4 && !_isCompletingTransfer
+                                        ? secondaryColor
+                                        : Colors.grey[300],
+                                    foregroundColor: Colors.white,
+                                    elevation: 0,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
                                   ),
-                                ),
-                                child: _isCompletingTransfer
-                                    ? const SizedBox(
-                                  width: 24,
-                                  height: 24,
-                                  child: CircularProgressIndicator(
-                                    color: Colors.white,
-                                    strokeWidth: 2.5,
-                                  ),
-                                )
-                                    : const Text(
-                                  "Proceed",
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w600,
+                                  child: _isCompletingTransfer
+                                      ? const SizedBox(
+                                    width: 24,
+                                    height: 24,
+                                    child: CircularProgressIndicator(
+                                      color: Colors.white,
+                                      strokeWidth: 2.5,
+                                    ),
+                                  )
+                                      : const Text(
+                                    "Proceed",
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w600,
+                                    ),
                                   ),
                                 ),
                               ),
                             ),
-                          ),
-                          const SizedBox(height: 32),
-                        ],
+                            const SizedBox(height: 32),
+                          ],
+                        ),
                       ),
-                    ),
 
-                    // Loading overlay
+                      // Loading overlay
 
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-            );
-          },
-        );
-      },
-    );
+              );
+            },
+          );
+        },
+      );
+    });
   }
+
 
   Widget _buildDetailRow(String label, String value, {bool isAmount = false}) {
     return Row(

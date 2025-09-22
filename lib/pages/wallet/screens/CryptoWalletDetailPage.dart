@@ -561,24 +561,27 @@ class _FiatWalletDetailPageState extends State<FiatWalletDetailPage> {
                         const SizedBox(height: 24),
 
                         // Account Number Field
-                        currency.toUpperCase() == "USD" ||currency.toUpperCase() == "EUR"||currency.toUpperCase() == "GBP"||currency.toUpperCase() == "CAD"?Container() :Column(
+                        Column(
                           children: [
                             _buildDetailRowX(
-                              label:accountNumber.length<13? 'Account number':"Wallet Address",
+                              label:accountNumber.length<13? 'Account number':"Account number",
                               value: accountNumber.length<13? accountNumber:accountNumber.substring(0,10)+"..."+getLastFourDigits(accountNumber),
                             ),
                             const SizedBox(height: 24),
 
 
-                            _buildDetailRowX(
-                              label:"Bank name",
-                              value: bankName,
-                            ),
+
                           ],
                         ),
 
+                        currency.toUpperCase() != "NGN" ?Container() :_buildDetailRowX(
+                          label:"Bank name",
+                          value: bankName,
+                        ),
 
-                        _existingRequestData != null?_buildRequestStatus():Container(),
+                        currency.toUpperCase() == "NGN" ||currency.toUpperCase() == "KES"  ?Container():  _isCheckingExistingRequest?Center(child: CircularProgressIndicator(color: Colors.black,strokeWidth: 1.5,),):Container(),
+
+                        currency.toUpperCase() == "KES"? _buildActiveAccountSectionKES(widget.wallet):_existingRequestData != null?_buildRequestStatus():Container(),
 
 
                       ],
@@ -1045,74 +1048,89 @@ class _FiatWalletDetailPageState extends State<FiatWalletDetailPage> {
   }
 
   Widget _buildActiveAccountSectionUSD(Map<String, dynamic> data, Map<String, dynamic> wallet, Map<String, dynamic> currency) {
+    final wallet = data['wallet'];
+    final providerMetadata = wallet['provider_metadata'];
 
+    // Safely extract data
+    dynamic rawData;
+    if (providerMetadata is Map) {
+      rawData = providerMetadata['data'];
+    } else if (providerMetadata is String) {
+      final decoded = jsonDecode(providerMetadata);
+      rawData = decoded['data'];
+    } else {
+      print('Unexpected provider_metadata type: ${providerMetadata.runtimeType}');
+    }
 
-      final wallet = data['wallet'];
-      final providerMetadata = wallet['provider_metadata'];
+    // Ensure rawData is a Map
+    if (rawData is! Map) {
+      print('accountData is not a Map: ${rawData.runtimeType}');
+    }
 
-      // Safely extract data
-      dynamic rawData;
-      if (providerMetadata is Map) {
-        rawData = providerMetadata['data'];
-      } else if (providerMetadata is String) {
-        final decoded = jsonDecode(providerMetadata);
-        rawData = decoded['data'];
-      } else {
-        print('Unexpected provider_metadata type: ${providerMetadata.runtimeType}');
-      }
+    final accountData = rawData as Map<String, dynamic>;
 
-      // Ensure rawData is a Map
-      if (rawData is! Map) {
-        print('accountData is not a Map: ${rawData.runtimeType}');
-      }
-
-      final accountData = rawData as Map<String, dynamic>;
-
-// Primary account (ACH)
+    // Primary account (ACH)
     final primaryAccount = {
-      'accountNumber': accountData['accountNumber'],
-      'bankName': accountData['bankName'],
-      'bankCode': accountData['bankCode'],
-      'addressableIn': accountData['otherInfo']['addressableIn'], // "ACH"
-      'memo': accountData['otherInfo']['memo'],
+      'accountNumber': accountData['accountNumber'] ?? 'N/A',
+      'accountName': accountData['accountName'] ?? 'N/A',
+      'bankName': accountData['bankName'] ?? 'N/A',
+      'bankCode': accountData['bankCode'] ?? 'N/A',
+      'countryCode': accountData['countryCode'] ?? 'N/A',
+      'postalCode': accountData['postalCode'] ?? 'N/A',
+      'reference': accountData['reference'] ?? 'N/A',
+      'addressableIn': accountData['otherInfo'] != null ? accountData['otherInfo']['addressableIn'] ?? 'N/A' : 'N/A',
+      'memo': accountData['otherInfo'] != null ? accountData['otherInfo']['memo'] ?? 'N/A' : 'N/A',
+      'iban': accountData['otherInfo'] != null ? accountData['otherInfo']['iban'] ?? 'N/A' : 'N/A',
+      'sortCode': accountData['otherInfo'] != null ? accountData['otherInfo']['sortCode'] ?? 'N/A' : 'N/A',
+      'bankSwiftCode': accountData['otherInfo'] != null ? accountData['otherInfo']['bankSwiftCode'] ?? 'N/A' : 'N/A',
+      'bankAddress': accountData['otherInfo'] != null ? accountData['otherInfo']['bankAddress'] ?? 'N/A' : 'N/A',
+      'checkNumber': accountData['otherInfo'] != null ? accountData['otherInfo']['checkNumber'] ?? 'N/A' : 'N/A',
     };
 
-// Alternate accounts array
+    // Alternate accounts array
     final alternateAccounts = accountData['alternateAccountDetails'] as List;
 
-// Account 1 - SWIFT (Switzerland)
+    // Account 1 - SWIFT (Switzerland)
     final swiftAccount = alternateAccounts[0];
     final swiftAccountData = {
-      'accountNumber': swiftAccount['accountNumber'],
-      'bankName': swiftAccount['bankName'],
-      'bankCode': swiftAccount['bankCode'],
-      'countryCode': swiftAccount['countryCode'], // "CH"
-      'postalCode': swiftAccount['postalCode'], // "8001"
-      'bankSwiftCode': swiftAccount['otherInfo']['bankSwiftCode'], // "MOCKBICX"
-      'addressableIn': swiftAccount['otherInfo']['addressableIn'], // "SWIFT"
-      'bankAddress': swiftAccount['otherInfo']['bankAddress'],
-      'memo': swiftAccount['otherInfo']['memo'],
+      'accountNumber': swiftAccount['accountNumber'] ?? 'N/A',
+      'accountName': swiftAccount['accountName'] ?? 'N/A',
+      'bankName': swiftAccount['bankName'] ?? 'N/A',
+      'bankCode': swiftAccount['bankCode'] ?? 'N/A',
+      'countryCode': swiftAccount['countryCode'] ?? 'N/A',
+      'postalCode': swiftAccount['postalCode'] ?? 'N/A',
+      'reference': swiftAccount['reference'] ?? 'N/A',
+      'bankSwiftCode': swiftAccount['otherInfo'] != null ? swiftAccount['otherInfo']['bankSwiftCode'] ?? 'N/A' : 'N/A',
+      'addressableIn': swiftAccount['otherInfo'] != null ? swiftAccount['otherInfo']['addressableIn'] ?? 'N/A' : 'N/A',
+      'bankAddress': swiftAccount['otherInfo'] != null ? swiftAccount['otherInfo']['bankAddress'] ?? 'N/A' : 'N/A',
+      'memo': swiftAccount['otherInfo'] != null ? swiftAccount['otherInfo']['memo'] ?? 'N/A' : 'N/A',
+      'iban': swiftAccount['otherInfo'] != null ? swiftAccount['otherInfo']['iban'] ?? 'N/A' : 'N/A',
+      'sortCode': swiftAccount['otherInfo'] != null ? swiftAccount['otherInfo']['sortCode'] ?? 'N/A' : 'N/A',
+      'checkNumber': swiftAccount['otherInfo'] != null ? swiftAccount['otherInfo']['checkNumber'] ?? 'N/A' : 'N/A',
     };
 
-// Account 2 - FEDWIRE (US)
+    // Account 2 - FEDWIRE (US)
     final fedwireAccount = alternateAccounts[1];
     final fedwireAccountData = {
-      'accountNumber': fedwireAccount['accountNumber'],
-      'bankName': fedwireAccount['bankName'],
-      'bankCode': fedwireAccount['bankCode'],
-      'countryCode': fedwireAccount['countryCode'], // "US"
-      'postalCode': fedwireAccount['postalCode'], // "10001"
-      'addressableIn': fedwireAccount['otherInfo']['addressableIn'], // "FEDWIRE"
-      'bankAddress': fedwireAccount['otherInfo']['bankAddress'],
-      'memo': fedwireAccount['otherInfo']['memo'],
+      'accountNumber': fedwireAccount['accountNumber'] ?? 'N/A',
+      'accountName': fedwireAccount['accountName'] ?? 'N/A',
+      'bankName': fedwireAccount['bankName'] ?? 'N/A',
+      'bankCode': fedwireAccount['bankCode'] ?? 'N/A',
+      'countryCode': fedwireAccount['countryCode'] ?? 'N/A',
+      'postalCode': fedwireAccount['postalCode'] ?? 'N/A',
+      'reference': fedwireAccount['reference'] ?? 'N/A',
+      'addressableIn': fedwireAccount['otherInfo'] != null ? fedwireAccount['otherInfo']['addressableIn'] ?? 'N/A' : 'N/A',
+      'bankAddress': fedwireAccount['otherInfo'] != null ? fedwireAccount['otherInfo']['bankAddress'] ?? 'N/A' : 'N/A',
+      'memo': fedwireAccount['otherInfo'] != null ? fedwireAccount['otherInfo']['memo'] ?? 'N/A' : 'N/A',
+      'iban': fedwireAccount['otherInfo'] != null ? fedwireAccount['otherInfo']['iban'] ?? 'N/A' : 'N/A',
+      'sortCode': fedwireAccount['otherInfo'] != null ? fedwireAccount['otherInfo']['sortCode'] ?? 'N/A' : 'N/A',
+      'bankSwiftCode': fedwireAccount['otherInfo'] != null ? fedwireAccount['otherInfo']['bankSwiftCode'] ?? 'N/A' : 'N/A',
+      'checkNumber': fedwireAccount['otherInfo'] != null ? fedwireAccount['otherInfo']['checkNumber'] ?? 'N/A' : 'N/A',
     };
-
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-
-
         _buildAccountDetails(primaryAccount, 'US Bank Transfer'),
         SizedBox(height: 24),
 
@@ -1124,30 +1142,19 @@ class _FiatWalletDetailPageState extends State<FiatWalletDetailPage> {
         _buildAccountDetails(fedwireAccountData, 'US Wire Transfer'),
 
         // Account Details
-
-
-
         SizedBox(height: 24),
-
-
-
-
-
       ],
     );
   }
-
   Widget _buildAccountDetails(Map<String, dynamic> accountData, String type) {
     return Column(
       mainAxisAlignment: MainAxisAlignment.start,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-
         Text(
           type,
           style: GoogleFonts.poppins(
             fontSize: 18,
-
             fontWeight: FontWeight.w700,
             color: Colors.black,
             letterSpacing: 0.5,
@@ -1155,199 +1162,284 @@ class _FiatWalletDetailPageState extends State<FiatWalletDetailPage> {
         ),
         SizedBox(height: 24),
 
-        _buildDetailRowX(
-          label: 'Account Number',
-          value: accountData['accountNumber'] ?? 'N/A',
-        ),
-        SizedBox(height: 24),
 
+
+        // IBAN (mainly for European transfers)
+        if (accountData['iban'] != null && accountData['iban'] != 'N/A') ...[
+          _buildDetailRowX(
+            label: 'IBAN',
+            value: accountData['iban']?.isEmpty == true ? 'N/A' : accountData['iban'],
+          ),
+          SizedBox(height: 24),
+        ],
+
+        // Bank Name
         _buildDetailRowX(
           label: 'Bank Name',
-          value: accountData['bankName'] ?? 'N/A',
+          value: accountData['bankName']?.isEmpty == true ? 'N/A' : (accountData['bankName'] ?? 'N/A'),
         ),
         SizedBox(height: 24),
 
+        // Bank Code
         _buildDetailRowX(
           label: 'Bank Code',
           value: accountData['bankCode'] ?? 'N/A',
         ),
         SizedBox(height: 24),
 
-        if (type == 'International Wire') ...[
+        // Sort Code (mainly for UK transfers)
+        if (accountData['sortCode'] != null && accountData['sortCode'] != 'N/A') ...[
+          _buildDetailRowX(
+            label: 'Sort Code',
+            value: accountData['sortCode']?.isEmpty == true ? 'N/A' : accountData['sortCode'],
+          ),
+          SizedBox(height: 24),
+        ],
+
+        // SWIFT Code for international transfers
+        if (type == 'International Wire' || (accountData['bankSwiftCode'] != null && accountData['bankSwiftCode'] != 'N/A')) ...[
           _buildDetailRowX(
             label: 'SWIFT Code',
-            value: accountData['bankSwiftCode'] ?? 'N/A',
-          ),
-          SizedBox(height: 24),
-
-          _buildDetailRowX(
-            label: 'Bank Address',
-            value: accountData['bankAddress'] ?? 'N/A',
+            value: accountData['bankSwiftCode']?.isEmpty == true ? 'N/A' : (accountData['bankSwiftCode'] ?? 'N/A'),
           ),
           SizedBox(height: 24),
         ],
 
-        if (type == 'US Wire Transfer') ...[
+        // Country Code
+        if (accountData['countryCode'] != null && accountData['countryCode'] != 'N/A') ...[
           _buildDetailRowX(
-            label: 'Bank Address',
-            value: accountData['bankAddress'] ?? 'N/A',
+            label: 'Country Code',
+            value: accountData['countryCode']?.isEmpty == true ? 'N/A' : accountData['countryCode'],
           ),
           SizedBox(height: 24),
         ],
 
+        // Postal Code
+        if (accountData['postalCode'] != null && accountData['postalCode'] != 'N/A') ...[
+          _buildDetailRowX(
+            label: 'Postal Code',
+            value: accountData['postalCode']?.isEmpty == true ? 'N/A' : accountData['postalCode'],
+          ),
+          SizedBox(height: 24),
+        ],
+
+        // Bank Address for wire transfers
+        if (type == 'International Wire' || type == 'US Wire Transfer' || (accountData['bankAddress'] != null && accountData['bankAddress'] != 'N/A')) ...[
+          _buildDetailRowX(
+            label: 'Bank Address',
+            value: accountData['bankAddress']?.isEmpty == true ? 'N/A' : (accountData['bankAddress'] ?? 'N/A'),
+          ),
+          SizedBox(height: 24),
+        ],
+
+        // Check Number
+        if (accountData['checkNumber'] != null && accountData['checkNumber'] != 'N/A') ...[
+          _buildDetailRowX(
+            label: 'Check Number',
+            value: accountData['checkNumber']?.isEmpty == true ? 'N/A' : accountData['checkNumber'],
+          ),
+          SizedBox(height: 24),
+        ],
+
+        // Transfer Method
         _buildDetailRowX(
           label: 'Transfer Method',
-          value: accountData['addressableIn'] ?? type,
+          value: (accountData['addressableIn']?.isEmpty == true ? type : (accountData['addressableIn'] ?? type)),
         ),
         SizedBox(height: 24),
 
+        // Reference
+        if (accountData['reference'] != null && accountData['reference'] != 'N/A') ...[
+          _buildDetailRowX(
+            label: 'Reference',
+            value: accountData['reference']?.isEmpty == true ? 'N/A' : accountData['reference'],
+          ),
+          SizedBox(height: 24),
+        ],
+
+        // Reference/Memo
         _buildDetailRowX(
           label: 'Reference/Memo',
-          value: accountData['memo'] ?? 'N/A',
+          value: accountData['memo']?.isEmpty == true ? 'N/A' : (accountData['memo'] ?? 'N/A'),
         ),
       ],
     );
   }
-
   Widget _buildActiveAccountSection(Map<String, dynamic> data, Map<String, dynamic> wallet, Map<String, dynamic> currency) {
+    final walletData = data['wallet'];
+    final providerMetadata = walletData['provider_metadata'];
 
-    Map<String, dynamic> accountData = {
-      'accountNumber': 'N/A',
-      'bankName': 'N/A',
-      'bankCode': 'N/A',
-      'countryCode': 'N/A',
-      'walletProvider': 'N/A',
-      'merchantReference': 'N/A',
-      'iban': 'N/A',
-      'sortCode': 'N/A',
-      'bankSwiftCode': 'N/A',
-      'addressableIn': 'N/A',
-      'bankAddress': 'N/A',
+    // Safely extract data
+    dynamic rawData;
+    if (providerMetadata is Map) {
+      rawData = providerMetadata['data'];
+    } else if (providerMetadata is String) {
+      try {
+        final decoded = jsonDecode(providerMetadata);
+        rawData = decoded['data'];
+      } catch (e) {
+        print('Error decoding provider_metadata JSON: $e');
+        return SizedBox.shrink();
+      }
+    } else {
+      print('Unexpected provider_metadata type: ${providerMetadata.runtimeType}');
+      return SizedBox.shrink();
+    }
+
+    // Ensure rawData is a Map
+    if (rawData is! Map) {
+      print('accountData is not a Map: ${rawData.runtimeType}');
+      return SizedBox.shrink();
+    }
+
+    final accountData = rawData as Map<String, dynamic>;
+
+    // Primary account details
+    final primaryAccount = {
+      'accountNumber': accountData['accountNumber'] ?? 'N/A',
+      'accountName': accountData['accountName'] ?? 'N/A',
+      'bankName': accountData['bankName'] ?? 'N/A',
+      'bankCode': accountData['bankCode'] ?? 'N/A',
+      'countryCode': accountData['countryCode'] ?? 'N/A',
+      'postalCode': accountData['postalCode'] ?? 'N/A',
+      'reference': accountData['reference'] ?? 'N/A',
+      'iban': accountData['otherInfo'] != null ? accountData['otherInfo']['iban'] ?? 'N/A' : 'N/A',
+      'sortCode': accountData['otherInfo'] != null ? accountData['otherInfo']['sortCode'] ?? 'N/A' : 'N/A',
+      'bankSwiftCode': accountData['otherInfo'] != null ? accountData['otherInfo']['bankSwiftCode'] ?? 'N/A' : 'N/A',
+      'addressableIn': accountData['otherInfo'] != null ? accountData['otherInfo']['addressableIn'] ?? 'N/A' : 'N/A',
+      'bankAddress': accountData['otherInfo'] != null ? accountData['otherInfo']['bankAddress'] ?? 'N/A' : 'N/A',
+      'checkNumber': accountData['otherInfo'] != null ? accountData['otherInfo']['checkNumber'] ?? 'N/A' : 'N/A',
+      'memo': accountData['otherInfo'] != null ? accountData['otherInfo']['memo'] ?? 'N/A' : 'N/A',
     };
 
-    if (wallet != null) {
-      final providerMetadata = wallet['provider_metadata'];
+    // Get alternate accounts if they exist
+    final alternateAccounts = accountData['alternateAccountDetails'] as List?;
+    Map<String, dynamic>? alternateAccount;
 
-      // Safely extract and decode data
-      dynamic rawData;
-      if (providerMetadata is Map) {
-        // Data is already a Map
-        rawData = providerMetadata['data'];
-      } else if (providerMetadata is String) {
-        // Data is JSON string, decode it
-        try {
-          final decoded = jsonDecode(providerMetadata);
-          rawData = decoded['data'];
-        } catch (e) {
-          print('Error decoding provider_metadata JSON: $e');
-          rawData = null;
-        }
-      } else {
-        print('Unexpected provider_metadata type: ${providerMetadata.runtimeType}');
-        rawData = null;
-      }
-
-      // Extract banking details if rawData is valid
-      if (rawData is Map<String, dynamic>) {
-        accountData.addAll({
-          'accountNumber': rawData['accountNumber'] ?? 'N/A',
-          'bankName': rawData['bankName'] ?? 'N/A',
-          'bankCode': rawData['bankCode'] ?? 'N/A',
-          'countryCode': rawData['countryCode'] ?? 'N/A',
-          'walletProvider': rawData['walletProvider'] ?? 'N/A',
-          'merchantReference': rawData['merchantReference'] ?? 'N/A',
-        });
-
-        // Extract otherInfo nested data
-        final otherInfo = rawData['otherInfo'];
-        if (otherInfo is Map<String, dynamic>) {
-          accountData.addAll({
-            'iban': otherInfo['iban'] ?? 'N/A',
-            'sortCode': otherInfo['sortCode'] ?? 'N/A',
-            'bankSwiftCode': otherInfo['bankSwiftCode'] ?? 'N/A',
-            'addressableIn': otherInfo['addressableIn'] ?? 'N/A',
-            'bankAddress': otherInfo['bankAddress'] ?? 'N/A',
-          });
-        }
-      } else {
-        print('rawData is not a valid Map: ${rawData.runtimeType}');
-      }
+    if (alternateAccounts != null && alternateAccounts.isNotEmpty) {
+      final alternate = alternateAccounts[0];
+      alternateAccount = {
+        'accountNumber': alternate['accountNumber'] ?? 'N/A',
+        'accountName': alternate['accountName'] ?? 'N/A',
+        'bankName': alternate['bankName'] ?? 'N/A',
+        'bankCode': alternate['bankCode'] ?? 'N/A',
+        'countryCode': alternate['countryCode'] ?? 'N/A',
+        'postalCode': alternate['postalCode'] ?? 'N/A',
+        'reference': alternate['reference'] ?? 'N/A',
+        'iban': alternate['otherInfo'] != null ? alternate['otherInfo']['iban'] ?? 'N/A' : 'N/A',
+        'sortCode': alternate['otherInfo'] != null ? alternate['otherInfo']['sortCode'] ?? 'N/A' : 'N/A',
+        'bankSwiftCode': alternate['otherInfo'] != null ? alternate['otherInfo']['bankSwiftCode'] ?? 'N/A' : 'N/A',
+        'addressableIn': alternate['otherInfo'] != null ? alternate['otherInfo']['addressableIn'] ?? 'N/A' : 'N/A',
+        'bankAddress': alternate['otherInfo'] != null ? alternate['otherInfo']['bankAddress'] ?? 'N/A' : 'N/A',
+        'checkNumber': alternate['otherInfo'] != null ? alternate['otherInfo']['checkNumber'] ?? 'N/A' : 'N/A',
+        'memo': alternate['otherInfo'] != null ? alternate['otherInfo']['memo'] ?? 'N/A' : 'N/A',
+      };
     }
+
+    // Determine transfer type based on addressableIn
+    String primaryTransferType = _getTransferType(primaryAccount['addressableIn']);
+    String? alternateTransferType = alternateAccount != null
+        ? _getTransferType(alternateAccount['addressableIn'])
+        : null;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Account Details
+        // Primary Account
+        _buildAccountDetails(primaryAccount, primaryTransferType),
 
-
-        _buildDetailRowX(
-          label: 'Account Number',
-          value: accountData['accountNumber'] ?? 'N/A',
-        ),
-        SizedBox(height: 24),
-
-
-        _buildDetailRowX(
-          label: 'IBAN',
-          value: accountData['iban'] ?? 'N/A',
-        ),
-        SizedBox(height: 24),
-
-
-
-
-        _buildDetailRowX(
-          label: 'Bank Name',
-          value: accountData['bankName'] ?? 'N/A',
-        ),
-        SizedBox(height: 24),
-
-        _buildDetailRowX(
-          label: 'Bank Code',
-          value: accountData['bankCode'] ?? 'N/A',
-        ),
-        SizedBox(height: 24),
-
-        _buildDetailRowX(
-          label: 'Sort Code',
-          value: accountData['sortCode'] ?? 'N/A',
-        ),
-        SizedBox(height: 24),
-        _buildDetailRowX(
-          label: 'SWIFT Code',
-          value: accountData['bankSwiftCode'] ?? 'N/A',
-        ),
+        // Alternate Account (if exists)
+        if (alternateAccount != null) ...[
+          SizedBox(height: 24),
+          _buildAccountDetails(alternateAccount, alternateTransferType!),
+        ],
 
         SizedBox(height: 24),
-        _buildDetailRowX(
-          label: 'Country',
-          value: accountData['countryCode'] ?? 'N/A',
-        ),
-
-        SizedBox(height: 24),
-
-        _buildDetailRowX(
-          label: 'Addressable In',
-          value: accountData['addressableIn'] ?? 'N/A',
-        ),
-        SizedBox(height: 24),
-
-        _buildDetailRowX(
-          label: 'Bank Address',
-          value: accountData['bankAddress'] ?? 'N/A',
-        ),
-        SizedBox(height: 24),
-
       ],
     );
   }
+
+  Widget _buildActiveAccountSectionKES(Map<String, dynamic> wallet) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildDetailRowX(
+          label: 'Bank name',
+          value: wallet['bank_name']?.isEmpty == true ? 'N/A' : wallet['bank_name'],
+        ),
+        SizedBox(height: 24),
+
+        _buildDetailRowX(
+          label: 'Bank code',
+          value: wallet['bank_code']?.isEmpty == true ? 'N/A' : wallet['bank_code'],
+        ),
+        SizedBox(height: 24),
+
+        _buildDetailRowX(
+          label: 'Bank short code',
+          value: wallet['bank_short_code']?.isEmpty == true ? 'N/A' : wallet['bank_short_code'],
+        ),
+        SizedBox(height: 24),
+
+        _buildDetailRowX(
+          label: 'Bank swift code',
+          value: wallet['bank_swift_code']?.isEmpty == true ? 'N/A' : wallet['bank_swift_code'],
+        ),
+        SizedBox(height: 24),
+
+        _buildDetailRowX(
+          label: 'Bank branch code',
+          value: wallet['bank_branch_code']?.isEmpty == true ? 'N/A' : wallet['bank_branch_code'],
+        ),
+        SizedBox(height: 24),
+
+        _buildDetailRowX(
+          label: 'Bank address',
+          value: wallet['bank_address']?.isEmpty == true ? 'N/A' : wallet['bank_address'],
+        ),
+        SizedBox(height: 24),
+
+        _buildDetailRowX(
+          label: 'Currency code',
+          value: wallet['currency_code']?.isEmpty == true ? 'N/A' : wallet['currency_code'],
+        ),
+        SizedBox(height: 24),
+
+        _buildDetailRowX(
+          label: 'Currency network',
+          value: wallet['currency_network']?.isEmpty == true ? 'N/A' : wallet['currency_network'],
+        ),
+        SizedBox(height: 24),
+
+        // Account Details
+      ],
+    );
+  }  String _getTransferType(String? addressableIn) {
+    switch (addressableIn?.toUpperCase()) {
+      case 'FPS':
+        return 'UK Faster Payments';
+      case 'CHAPS':
+        return 'UK CHAPS Transfer';
+      case 'SWIFT':
+        return 'International Wire';
+      case 'SEPA':
+        return 'SEPA Transfer';
+      case 'ACH':
+        return 'US Bank Transfer';
+      case 'FEDWIRE':
+        return 'US Wire Transfer';
+      default:
+        return 'Bank Transfer';
+    }
+  }
+
+
 
   Widget _buildPendingRequestSection(Map<String, dynamic> data, Map<String, dynamic> userRequestData) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Request Information
-        SizedBox(height: 24),
 
         _buildDetailRowX(
           label: 'Status',
@@ -1356,126 +1448,17 @@ class _FiatWalletDetailPageState extends State<FiatWalletDetailPage> {
         SizedBox(height: 24),
 
 
+
+
         _buildDetailRowX(
           label: 'Account Type',
           value: _formatAccountType(data['account_type']),
         ),
         SizedBox(height: 24),
 
-        _buildDetailRowX(
-          label: 'Purpose',
-          value: userRequestData['account_designations'],
-        ),
 
-
-        SizedBox(height: 24),
-
-        _buildDetailRowX(
-          label: 'Email',
-          value: data['wallet']['walletable']['email'] ?? 'N/A',
-        ),
-        SizedBox(height: 24),
-
-        _buildDetailRowX(
-          label: 'Phone',
-          value: '${data['wallet']['walletable']['tel_prefix'] ?? ''}${data['wallet']['walletable']['telephone'] ?? ''}',
-        ),
-        SizedBox(height: 24),
-
-        _buildDetailRowX(
-          label: 'Date of Birth',
-          value: data['wallet']['walletable']['date_of_birth'] ?? 'N/A',
-        ),
-        SizedBox(height: 24),
-
-        _buildDetailRowX(
-          label: 'Gender',
-          value: data['wallet']['walletable']['gender']?.toString() ?? 'N/A',
-        ),
-
-        SizedBox(height: 24),
-
-
-        _buildDetailRowX(
-          label: 'Address',
-          value: data['wallet']['walletable']['physical_address'] ?? 'N/A',
-        ),
-
-
-        SizedBox(height: 24),
 
         // Personal Information (from user_request_data if available)
-        if (data['user_request_data'] != null) ...[
-          _buildDetailRowQ(
-            label: 'Occupation',
-            value: data['user_request_data']['occupation'] ?? 'N/A',
-          ),
-          SizedBox(height: 24),
-
-          _buildDetailRowQ(
-            label: 'Employment Status',
-            value: data['user_request_data']['employment_status']?.toString().replaceAll('_', ' ') ?? 'N/A',
-          ),
-          SizedBox(height: 24),
-
-          _buildDetailRowQ(
-            label: 'Source of Income',
-            value: data['user_request_data']['source_of_income']?.toString().replaceAll('_', ' ') ?? 'N/A',
-          ),
-          SizedBox(height: 24),
-
-          _buildDetailRowQ(
-            label: 'Account Purpose',
-            value: data['user_request_data']['account_designations'] ?? 'N/A',
-          ),
-          SizedBox(height: 24),
-
-          _buildDetailRowX(
-            label: 'ID Type',
-            value: data['user_request_data']['means_of_identification_type']?.toString() ?? 'N/A',
-          ),
-          SizedBox(height: 24),
-
-          _buildDetailRowX(
-            label: 'ID Number',
-            value: data['user_request_data']['means_of_identification_number'] ?? 'N/A',
-          ),
-          SizedBox(height: 24),
-
-          _buildDetailRowX(
-            label: 'Issued Country',
-            value: data['user_request_data']['means_of_identification_issued_country_code'] ?? 'N/A',
-          ),
-          SizedBox(height: 24),
-
-          _buildDetailRowX(
-            label: 'Issue Date',
-            value: data['user_request_data']['means_of_identification_issued_date'] ?? 'N/A',
-          ),
-          SizedBox(height: 24),
-
-          _buildDetailRowX(
-            label: 'Expiration Date',
-            value: data['user_request_data']['means_of_identification_expiration_date'] ?? 'N/A',
-          ),
-          SizedBox(height: 24),
-
-          // Tax Information
-
-          _buildDetailRowX(
-            label: 'Tax Country',
-            value: data['user_request_data']['tax_identity_country'] ?? 'N/A',
-          ),
-          SizedBox(height: 24),
-
-          _buildDetailRowX(
-            label: 'Tax ID Number',
-            value: data['user_request_data']['tax_identity_number'] ?? 'Not Provided',
-          ),
-
-
-
-        ],
       ],
     );
   }

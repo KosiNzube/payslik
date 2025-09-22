@@ -12,6 +12,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../models/Country.dart';
 import '../utils/api_service.dart';
 
 class CrossBorderTransferPageIntent extends StatefulWidget {
@@ -45,8 +46,13 @@ class _CrossBorderTransferPageState extends State<CrossBorderTransferPageIntent>
   String selectedPaymentScheme = "swift";
 
   bool isLoading = false;
+  List<Country> _countries = [];
+  List<Country> _filteredCountries = [];
+  Country? _selectedCountry;
   bool _isPinHidden = true;
   bool saveBeneficiary = false;
+  bool _isLoadingCountries = true;
+
 
   Color? _primaryColor;
   Color? _secondaryColor;
@@ -56,6 +62,27 @@ class _CrossBorderTransferPageState extends State<CrossBorderTransferPageIntent>
   bool showSuggestions = false;
   final formatter = NumberFormat('#,###');
 
+  Future<void> _loadCountries() async {
+    setState(() => _isLoadingCountries = true);
+    try {
+      final result = await CountryService.fetchCountries();
+      if (mounted) {
+        setState(() {
+          _countries = result;
+          _filteredCountries = List.from(_countries); // Initialize filtered list
+          _selectedCountry = _countries.first;
+          _isLoadingCountries = false;
+        });
+      }
+    } catch (e) {
+      debugPrint("❌ Failed to load countries: $e");
+      if (mounted) {
+        setState(() => _isLoadingCountries = false);
+      }
+      // Optionally show error toast or fallback UI
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -63,6 +90,7 @@ class _CrossBorderTransferPageState extends State<CrossBorderTransferPageIntent>
       _loadPrimaryColorAndLogo();
       final controller = Provider.of<WalletToBankTransferController>(context, listen: false);
       controller.fetchBanks();
+      _loadCountries();
       controller.fetchSourceWallets();
       controller.fetchSavedBeneficiaries();
       _resetForm();
@@ -124,321 +152,344 @@ class _CrossBorderTransferPageState extends State<CrossBorderTransferPageIntent>
         Random().nextInt(10000).toString();
   }
 
-  void _showTransactionSummary() {
-    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+  void _showTransactionSummary(Map<String, dynamic> result_initialize) {
 
-    FocusScope.of(context).unfocus();
+    String actual_balance_before = result_initialize["actual_balance_before"];
 
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) {
-        return StatefulBuilder(
-          builder: (context, setModalState) {
-            return Padding(
-              padding: EdgeInsets.only(bottom: bottomInset),
-              child: Container(
-                decoration: const BoxDecoration(
-                  color: Color(0xFFF8F9FA),
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
-                ),
-                child: SafeArea(
-                  top: false,
-                  child: Stack(
-                    children: [
-                      ListView(
-                        padding: EdgeInsets.zero,
-                        shrinkWrap: true,
-                        children: [
-                          // Handle bar
-                          Container(
-                            margin: const EdgeInsets.only(top: 12, bottom: 20),
-                            width: 40,
-                            height: 4,
-                            decoration: BoxDecoration(
-                              color: Colors.grey[300],
-                              borderRadius: BorderRadius.circular(2),
+    String amount_processable = result_initialize["amount_processable"];
+
+    String customer_charge_fee = result_initialize["customer_charge_fee"];
+    String expected_balance_after = result_initialize["expected_balance_after"];
+    String total_amount_processable = result_initialize["total_amount_processable"];
+
+
+    // 1️⃣ Hide keyboard first
+    FocusManager.instance.primaryFocus?.unfocus();
+
+    // 2️⃣ Wait for MediaQuery to update before showing modal
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (modalContext) {
+          return StatefulBuilder(
+            builder: (context, setModalState) {
+              return Padding(
+                // ✅ Use updated bottomInset (after keyboard dismiss)
+                padding: EdgeInsets.only(bottom: bottomInset),
+                child: Container(
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFF8F9FA),
+                    borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
+                  ),
+                  child: SafeArea(
+                    top: false,
+                    child: Stack(
+                      children: [
+                        ListView(
+                          padding: EdgeInsets.zero,
+                          shrinkWrap: true,
+                          children: [
+                            // Handle bar
+                            Container(
+                              margin: const EdgeInsets.only(top: 12, bottom: 20),
+                              width: 40,
+                              height: 4,
+                              decoration: BoxDecoration(
+                                color: Colors.grey[300],
+                                borderRadius: BorderRadius.circular(2),
+                              ),
                             ),
-                          ),
 
-                          // Header
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 24),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                const Text(
-                                  "Kindly review details",
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    color: Colors.grey,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                                TextButton(
-                                  onPressed: () => Navigator.pop(context),
-                                  child: const Text(
-                                    "Change",
+                            // Header
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 24),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  const Text(
+                                    "Kindly review details",
                                     style: TextStyle(
-                                      color: Color(0xFF007AFF),
-                                      fontSize: 16,
+                                      fontSize: 18,
+                                      color: Colors.grey,
                                       fontWeight: FontWeight.w500,
                                     ),
                                   ),
-                                ),
-                              ],
+                                  TextButton(
+                                    onPressed: () => Navigator.pop(context),
+                                    child: const Text(
+                                      "Change",
+                                      style: TextStyle(
+                                        color: Color(0xFF007AFF),
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
-                          ),
 
-                          // Transaction Details Card
-                          Container(
-                            margin: const EdgeInsets.symmetric(
-                                horizontal: 24, vertical: 20),
-                            padding: const EdgeInsets.all(24),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(16),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.04),
-                                  blurRadius: 10,
-                                  offset: const Offset(0, 2),
-                                ),
-                              ],
+                            // Transaction Details Card
+                            Container(
+                              margin: const EdgeInsets.symmetric(
+                                  horizontal: 24, vertical: 20),
+                              padding: const EdgeInsets.all(24),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(16),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.04),
+                                    blurRadius: 10,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: Column(
+                                children: [
+                                  _buildDetailRow(
+                                    "AMOUNT",
+                                    formatNumber(_amountController.text),
+                                    isAmount: true,
+                                  ),
+                                  const SizedBox(height: 20),
+                                  _buildDetailRow("PAYMENT SCHEME",
+                                      selectedPaymentScheme.toUpperCase()),
+                                  const SizedBox(height: 20),
+                                  _buildDetailRow("BENEFICIARY",
+                                      "${_firstNameController.text} ${_lastNameController.text}"),
+                                  const SizedBox(height: 20),
+                                  _buildDetailRow(
+                                      "EMAIL", _emailController.text),
+                                  const SizedBox(height: 20),
+
+                                  _buildDetailRow(
+                                      "CHARGE FEE", customer_charge_fee),
+                                  const SizedBox(height: 20),
+
+
+
+                                  _buildDetailRow(
+                                      "BALANCE BEFORE", actual_balance_before),
+                                  const SizedBox(height: 20),
+
+                                  _buildDetailRow(
+                                      "EXPECTED BALANCE AFTER", expected_balance_after),
+                                  const SizedBox(height: 20),
+
+
+
+                                  _buildDetailRow(
+                                      "ACCOUNT NUMBER",
+                                      _accountNumberController.text),
+                                  const SizedBox(height: 20),
+                                  _buildDetailRow(
+                                      "BANK CODE", _bankCodeController.text),
+                                  const SizedBox(height: 20),
+                                  _buildDetailRow(
+                                      "COUNTRY", selectedCountryCode ?? ""),
+                                  const SizedBox(height: 20),
+                                  _buildDetailRow(
+                                    "DESCRIPTION",
+                                    _narrationController.text.isNotEmpty
+                                        ? _narrationController.text
+                                        : "Cross Border FX Transfer",
+                                  ),
+                                ],
+                              ),
                             ),
-                            child: Column(
-                              children: [
-                                _buildDetailRow(
-                                  "AMOUNT",
-                                  "${formatNumber(_amountController.text)}",
-                                  isAmount: true,
-                                ),
-                                const SizedBox(height: 20),
-                                _buildDetailRow(
-                                    "PAYMENT SCHEME",
-                                    selectedPaymentScheme.toUpperCase()
-                                ),
-                                const SizedBox(height: 20),
-                                _buildDetailRow(
-                                    "BENEFICIARY",
-                                    "${_firstNameController.text} ${_lastNameController.text}"
-                                ),
-                                const SizedBox(height: 20),
-                                _buildDetailRow(
-                                    "EMAIL",
-                                    _emailController.text
-                                ),
-                                const SizedBox(height: 20),
-                                _buildDetailRow(
-                                    "ACCOUNT NUMBER",
-                                    _accountNumberController.text
-                                ),
-                                const SizedBox(height: 20),
-                                _buildDetailRow(
-                                    "BANK CODE",
-                                    _bankCodeController.text
-                                ),
-                                const SizedBox(height: 20),
-                                _buildDetailRow(
-                                    "COUNTRY",
-                                    selectedCountryCode ?? ""
-                                ),
-                                const SizedBox(height: 20),
-                                _buildDetailRow(
-                                  "DESCRIPTION",
-                                  _narrationController.text.isNotEmpty
-                                      ? _narrationController.text
-                                      : "Cross Border FX Transfer",
-                                ),
-                              ],
-                            ),
-                          ),
 
-                          const SizedBox(height: 24),
+                            const SizedBox(height: 24),
 
-                          // PIN Section
-                          Center(
-                            child: const Padding(
+                            // PIN Section
+                            const Padding(
                               padding: EdgeInsets.symmetric(horizontal: 24),
-                              child: Text(
-                                "Enter PIN to confirm",
-                                style: TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.black87,
+                              child: Center(
+                                child: Text(
+                                  "Enter PIN to confirm",
+                                  style: TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.black87,
+                                  ),
                                 ),
                               ),
                             ),
-                          ),
 
-                          const SizedBox(height: 24),
+                            const SizedBox(height: 24),
 
-                          // PIN Display
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 24),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: List.generate(4, (index) {
-                                return Container(
-                                  margin: const EdgeInsets.symmetric(horizontal: 8),
-                                  width: 50,
-                                  height: 50,
-                                  decoration: BoxDecoration(
-                                    border: Border.all(
-                                      color: _pinController.text.length > index
-                                          ? Colors.black87
-                                          : Colors.grey[300]!,
-                                      width: 2,
-                                    ),
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: Center(
-                                    child: _pinController.text.length > index
-                                        ? Container(
-                                      width: 12,
-                                      height: 12,
-                                      decoration: const BoxDecoration(
-                                        color: Colors.black87,
-                                        shape: BoxShape.circle,
+                            // PIN Display
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 24),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: List.generate(4, (index) {
+                                  return Container(
+                                    margin: const EdgeInsets.symmetric(horizontal: 8),
+                                    width: 50,
+                                    height: 50,
+                                    decoration: BoxDecoration(
+                                      border: Border.all(
+                                        color: _pinController.text.length > index
+                                            ? Colors.black87
+                                            : Colors.grey[300]!,
+                                        width: 2,
                                       ),
-                                    )
-                                        : null,
-                                  ),
-                                );
-                              }),
-                            ),
-                          ),
-
-                          const SizedBox(height: 32),
-
-                          // Custom PIN Pad
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 40),
-                            child: Column(
-                              children: [
-                                _buildPinRow(['1', '2', '3'], setModalState),
-                                const SizedBox(height: 16),
-                                _buildPinRow(['4', '5', '6'], setModalState),
-                                const SizedBox(height: 16),
-                                _buildPinRow(['7', '8', '9'], setModalState),
-                                const SizedBox(height: 16),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                                  children: [
-                                    const SizedBox(width: 60),
-                                    _buildPinButton('0', setModalState),
-                                    GestureDetector(
-                                      onTap: () {
-                                        if (_pinController.text.isNotEmpty) {
-                                          setModalState(() {
-                                            _pinController.text =
-                                                _pinController.text.substring(
-                                                    0,
-                                                    _pinController.text.length - 1);
-                                          });
-                                        }
-                                      },
-                                      child: Container(
-                                        width: 60,
-                                        height: 60,
-                                        decoration: BoxDecoration(
-                                          color: Colors.grey[100],
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Center(
+                                      child: _pinController.text.length > index
+                                          ? Container(
+                                        width: 12,
+                                        height: 12,
+                                        decoration: const BoxDecoration(
+                                          color: Colors.black87,
                                           shape: BoxShape.circle,
                                         ),
-                                        child: const Icon(
-                                          Icons.backspace_outlined,
-                                          size: 24,
-                                          color: Colors.black87,
+                                      )
+                                          : null,
+                                    ),
+                                  );
+                                }),
+                              ),
+                            ),
+
+                            const SizedBox(height: 32),
+
+                            // Custom PIN Pad
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 40),
+                              child: Column(
+                                children: [
+                                  _buildPinRow(['1', '2', '3'], setModalState),
+                                  const SizedBox(height: 16),
+                                  _buildPinRow(['4', '5', '6'], setModalState),
+                                  const SizedBox(height: 16),
+                                  _buildPinRow(['7', '8', '9'], setModalState),
+                                  const SizedBox(height: 16),
+                                  Row(
+                                    mainAxisAlignment:
+                                    MainAxisAlignment.spaceEvenly,
+                                    children: [
+                                      const SizedBox(width: 60),
+                                      _buildPinButton('0', setModalState),
+                                      GestureDetector(
+                                        onTap: () {
+                                          if (_pinController.text.isNotEmpty) {
+                                            setModalState(() {
+                                              _pinController.text =
+                                                  _pinController.text
+                                                      .substring(
+                                                      0,
+                                                      _pinController.text
+                                                          .length -
+                                                          1);
+                                            });
+                                          }
+                                        },
+                                        child: Container(
+                                          width: 60,
+                                          height: 60,
+                                          decoration: BoxDecoration(
+                                            color: Colors.grey[100],
+                                            shape: BoxShape.circle,
+                                          ),
+                                          child: const Icon(
+                                            Icons.backspace_outlined,
+                                            size: 24,
+                                            color: Colors.black87,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+
+                            const SizedBox(height: 40),
+
+                            // Action Button
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 24),
+                              child: Consumer<WalletToBankTransferController>(
+                                builder: (context, controller, child) {
+                                  final canProceed = _pinController.text.length == 4 &&
+                                      !controller.isProcessing &&
+                                      !isLoading;
+
+                                  return SizedBox(
+                                    width: double.infinity,
+                                    height: 56,
+                                    child: ElevatedButton(
+                                      onPressed: canProceed
+                                          ? () => _confirmTransfer(controller,result_initialize)
+                                          : null,
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: canProceed
+                                            ? const Color(0xFF34C759)
+                                            : Colors.grey[300],
+                                        foregroundColor: Colors.white,
+                                        elevation: 0,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(16),
+                                        ),
+                                      ),
+                                      child: controller.isProcessing || isLoading
+                                          ? const SizedBox(
+                                        width: 24,
+                                        height: 24,
+                                        child: CircularProgressIndicator(
+                                          color: Colors.white,
+                                          strokeWidth: 2.5,
+                                        ),
+                                      )
+                                          : const Text(
+                                        "Proceed",
+                                        style: TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.w600,
                                         ),
                                       ),
                                     ),
-                                  ],
-                                ),
-                              ],
+                                  );
+                                },
+                              ),
                             ),
-                          ),
 
-                          const SizedBox(height: 40),
-
-                          // Action Buttons
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 24),
-                            child: Consumer<WalletToBankTransferController>(
-                              builder: (context, controller, child) {
-                                bool canProceed = _pinController.text.length == 4 &&
-                                    !controller.isProcessing &&
-                                    !isLoading;
-
-                                return SizedBox(
-                                  width: double.infinity,
-                                  height: 56,
-                                  child: ElevatedButton(
-                                    onPressed: () {
-                                      if (canProceed) {
-                                        _confirmTransfer(controller);
-                                      }
-                                    },
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: canProceed
-                                          ? const Color(0xFF34C759)
-                                          : Colors.grey[300],
-                                      foregroundColor: Colors.white,
-                                      elevation: 0,
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(16),
-                                      ),
-                                    ),
-                                    child: controller.isProcessing || isLoading
-                                        ? const SizedBox(
-                                      width: 24,
-                                      height: 24,
-                                      child: CircularProgressIndicator(
-                                        color: Colors.white,
-                                        strokeWidth: 2.5,
-                                      ),
-                                    )
-                                        : const Text(
-                                      "Proceed",
-                                      style: TextStyle(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
-
-                          const SizedBox(height: 32),
-                        ],
-                      ),
-
-                      // Optional overlay if processing
-                      if (isLoading ||
-                          context.read<WalletToBankTransferController>().isProcessing)
-                        Positioned.fill(
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: Colors.black.withOpacity(0.3),
-                              borderRadius: const BorderRadius.vertical(
-                                  top: Radius.circular(25)),
-                            ),
-                            child: const Center(
-                              child: CircularProgressIndicator(),
-                            ),
-                          ),
+                            const SizedBox(height: 32),
+                          ],
                         ),
-                    ],
+
+                        // Loading Overlay
+                        if (isLoading ||
+                            context.read<WalletToBankTransferController>().isProcessing)
+                          Positioned.fill(
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: Colors.black.withOpacity(0.3),
+                                borderRadius: const BorderRadius.vertical(
+                                    top: Radius.circular(25)),
+                              ),
+                              child: const Center(
+                                child: CircularProgressIndicator(),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-            );
-          },
-        );
-      },
-    );
+              );
+            },
+          );
+        },
+      );
+    });
   }
 
   Widget _buildDetailRow(String label, String value, {bool isAmount = false}) {
@@ -564,12 +615,8 @@ class _CrossBorderTransferPageState extends State<CrossBorderTransferPageIntent>
       final response = await ApiService.postRequest(
         "/cross-border-payment-mgt/fx-wallet-bank-transfer/process",
         requestBody,
-        extraHeaders: {
-          'Authorization': 'Bearer $token',
-          'AppID': 'e64af448-e2a8-4842-b859-2cfc824439d1',
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-        },
+        extraHeaders: {'Authorization': 'Bearer $token'},
+
       );
 
       if (response["status"] == true) {
@@ -610,12 +657,8 @@ class _CrossBorderTransferPageState extends State<CrossBorderTransferPageIntent>
       final response = await ApiService.postRequest(
         "/cross-border-payment-mgt/fx-wallet-bank-transfer/initiate",
         requestBody,
-        extraHeaders: {
-          'Authorization': 'Bearer $token',
-          'AppID': 'e64af448-e2a8-4842-b859-2cfc824439d1',
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-        },
+        extraHeaders: {'Authorization': 'Bearer $token'},
+
       );
 
       if (response["status"] == true) {
@@ -644,25 +687,15 @@ class _CrossBorderTransferPageState extends State<CrossBorderTransferPageIntent>
   }
 
 // Updated _confirmTransfer method
-  void _confirmTransfer(WalletToBankTransferController controller) async {
+  void _confirmTransfer(WalletToBankTransferController controller, Map<String, dynamic> result_initialize) async {
     setState(() {
       isLoading = true;
     });
 
-    SmartDialog.showLoading(msg: "Please wait");
 
-    final result_initialize = await initializeTransfer(
-        sourceWalletNumberOrUuid: widget.wallet['wallet_number'] ?? widget.wallet['uuid'],
-
-        transferAmount: double.parse(_amountController.text.replaceAll(",", "")),
-        transferPaymentScheme: selectedPaymentScheme,
-        transferDescription: _narrationController.text.isNotEmpty
-            ? _narrationController.text
-            : "Cross Border FX Transfer");
 
 
     // Generate initialization reference if not already generated
-    if (result_initialize["success"] == true) {
       // Get the initialization reference
       String initializationReference = result_initialize["initialization_reference"];
       print("Transfer initiated successfully!");
@@ -691,7 +724,6 @@ class _CrossBorderTransferPageState extends State<CrossBorderTransferPageIntent>
         isLoading = false;
 
       });
-      SmartDialog.dismiss();
 
       if (result['success']) {
         _resetForm(); // Reset form on success
@@ -709,14 +741,7 @@ class _CrossBorderTransferPageState extends State<CrossBorderTransferPageIntent>
 
       // You can now use this reference for further processing
       // e.g., store it, pass it to another function, etc.
-    } else {
-      SmartDialog.dismiss();
-      setState(() {
-        isLoading = false;
 
-      });
-
-    }
 
   }
 
@@ -745,6 +770,124 @@ class _CrossBorderTransferPageState extends State<CrossBorderTransferPageIntent>
     final controller = Provider.of<WalletToBankTransferController>(context, listen: false);
     controller.clearBeneficiaryName();
   }
+
+  void _showCountryBottomSheet(BuildContext context) {
+    // Reset filtered countries to show all initially
+    _filteredCountries = List.from(_countries);
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setModalState) => Container(
+          height: MediaQuery.of(context).size.height * 0.8,
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+          ),
+          child: Column(
+            children: [
+              // Handle bar
+              Container(
+                width: 40,
+                height: 4,
+                margin: EdgeInsets.symmetric(vertical: 12),
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+
+              // Title
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 20),
+                child: Text(
+                  'Select Country',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+
+              SizedBox(height: 16),
+
+              // Search bar
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 20),
+                child: TextField(
+                  decoration: InputDecoration(
+                    hintText: 'Search countries...',
+                    prefixIcon: Icon(Icons.search),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
+                  ),
+                  onChanged: (value) {
+                    setModalState(() {
+                      _filteredCountries = _countries
+                          .where((country) => country.name
+                          .toLowerCase()
+                          .contains(value.toLowerCase()))
+                          .toList();
+                    });
+                  },
+                ),
+              ),
+
+              SizedBox(height: 16),
+
+              // Countries list
+              Expanded(
+                child: ListView.builder(
+                  itemCount: _filteredCountries.length,
+                  itemBuilder: (context, index) {
+                    final country = _filteredCountries[index];
+                    final isSelected = _selectedCountry?.name == country.name;
+
+                    return ListTile(
+                      leading: Container(
+                        width: 40,
+                        height: 30,
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.grey[300]!),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Center(
+                          child: Text(
+                            country.code,
+                            style: TextStyle(fontSize: 12),
+                          ),
+                        ),
+                      ),
+                      title: Text(country.name),
+                      trailing: isSelected
+                          ? Icon(Icons.check, color: Theme.of(context).primaryColor)
+                          : null,
+                      onTap: () {
+                        setState(() {
+                          _selectedCountry = country;
+                          selectedCountryCode=country.code;
+                        });
+                        Navigator.pop(context);
+                      },
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -899,25 +1042,42 @@ class _CrossBorderTransferPageState extends State<CrossBorderTransferPageIntent>
 
                     // Country Code
                     const Text("Beneficiary Country"),
-                    DropdownButtonFormField<String>(
-                      value: selectedCountryCode,
-                      decoration: const InputDecoration(
-                        border: OutlineInputBorder(),
-                      ),
-                      hint: const Text("Select country"),
-                      items: const [
-                        DropdownMenuItem(value: "US", child: Text("United States (US)")),
-                        DropdownMenuItem(value: "UK", child: Text("United Kingdom (UK)")),
-                        DropdownMenuItem(value: "CA", child: Text("Canada (CA)")),
+
+                    _isLoadingCountries
+                        ?   CircularProgressIndicator()
+                        : Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        GestureDetector(
+                          onTap: () => _showCountryBottomSheet(context),
+                          child: Container(
+                            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                            decoration: BoxDecoration(
+                              border: Border.all(color: Colors.grey),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  _selectedCountry != null
+                                      ? "${_selectedCountry!.name}"
+                                      : "Select Country",
+                                  style: TextStyle(
+                                    color: _selectedCountry != null ? Colors.black : Colors.grey[600],
+                                  ),
+                                ),
+                                Icon(Icons.arrow_drop_down),
+                              ],
+                            ),
+                          ),
+                        ),
+
 
                       ],
-                      onChanged: (value) {
-                        setState(() {
-                          selectedCountryCode = value;
-                        });
-                      },
-                      validator: (value) => value == null ? "Please select a country" : null,
                     ),
+
+
 
                     const SizedBox(height: 16),
 
@@ -1056,10 +1216,37 @@ class _CrossBorderTransferPageState extends State<CrossBorderTransferPageIntent>
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
-                        onPressed: () {
+                        onPressed: () async {
                           if (_formKey.currentState!.validate() &&
                               selectedCountryCode != null) {
-                            _showTransactionSummary();
+
+                            SmartDialog.showLoading(msg: "Please wait");
+
+                            final result_initialize = await initializeTransfer(
+                                sourceWalletNumberOrUuid: widget.wallet['wallet_number'] ?? widget.wallet['uuid'],
+
+                                transferAmount: double.parse(_amountController.text.replaceAll(",", "")),
+                                transferPaymentScheme: selectedPaymentScheme,
+                                transferDescription: _narrationController.text.isNotEmpty
+                                    ? _narrationController.text
+                                    : "Cross Border FX Transfer");
+
+
+                            if (result_initialize["success"] == true) {
+                              SmartDialog.dismiss();
+
+                              _showTransactionSummary(result_initialize);
+                            }else {
+
+
+                              SmartDialog.dismiss();
+                              setState(() {
+                                isLoading = false;
+
+                              });
+
+                            }
+
                           } else {
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(content: Text("Please fill all required fields")),

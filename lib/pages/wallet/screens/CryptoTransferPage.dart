@@ -29,7 +29,7 @@ class _CryptoTransferPageState extends State<CryptoTransferPage> {
     setState(() => _isSubmitting = true);
 
     final payload = {
-      "source_wallet_id": widget.wallet["id"],
+      "source_wallet_number_or_uuid": widget.wallet["id"],
       "destination_address_code": _destinationController.text.trim(),
       "destination_address_network": _selectedNetwork,
       "amount": double.tryParse(_amountController.text.trim()) ?? 0,
