@@ -1,4 +1,4 @@
-package com.faithblez.gb;
+package com.ebowallet.gb;
 
 
 import io.flutter.embedding.android.FlutterFragmentActivity;

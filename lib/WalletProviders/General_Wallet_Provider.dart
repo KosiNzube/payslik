@@ -454,40 +454,57 @@ class GeneralWalletProvider extends ChangeNotifier {
   }
 
   // Process wallet data (same logic as your original methods)
-  List<Map<String, dynamic>> _processWalletData(List<dynamic> data) {
-    return data.map((wallet) {
+  List<Map<String, dynamic>> _processWalletData(List data) {
+    return data.whereType<Map>().map((wallet) {
+      // --- Defaults ---
       String network = "Unknown";
       String walletAddress = "N/A";
       String label = "Unnamed Wallet";
       String walletStatus = "Unknown";
       String createdAt = "";
+      Map<String, dynamic>? providerMetadata;
 
-      final metadata = wallet["provider_metadata"];
+      // --- Provider Metadata ---
       try {
-        final meta = metadata is String ? json.decode(metadata) : metadata;
-        if (meta is Map<String, dynamic>) {
+        final metadata = wallet["provider_metadata"];
+        final dynamic meta = (metadata is String) ? json.decode(metadata) : metadata;
+
+        if (meta is Map) {
+          providerMetadata = Map<String, dynamic>.from(meta);
+
           network = meta["network"]?.toString() ?? "Unknown";
-          walletAddress = meta["code"]?.toString() ?? "N/A";
           label = meta["label"]?.toString() ?? "Unnamed Wallet";
-          if (label.isEmpty) {
-            label = wallet["ownership_label"]?.toString()?.trim() ?? "Unnamed Wallet";
+          if (label.isEmpty) { label = wallet["ownership_label"]?.toString()?.trim() ?? "Unnamed Wallet"; }
+          walletAddress = meta["code"]?.toString() ?? "N/A";
+          walletStatus = meta["state"]?.toString() ?? "Unknown";
+          createdAt = meta["created_date"]?.toString() ?? "";
+
+          final deposits = meta["deposit_addresses"];
+          if (deposits is List && deposits.isNotEmpty) {
+            final firstDeposit = deposits.first;
+            if (firstDeposit is Map &&
+                firstDeposit["data"] is Map &&
+                firstDeposit["data"]["account_number"] != null) {
+              walletAddress = firstDeposit["data"]["account_number"].toString();
+            }
           }
-          walletStatus = meta["status"]?.toString() ?? "Unknown";
-          createdAt = meta["created_at"]?.toString() ?? "";
         }
-      } catch (e) {
+      } catch (e, st) {
         debugPrint("⚠️ Failed to parse provider_metadata: $e");
+        debugPrint(st.toString());
       }
 
-      // Extract bank information
+      // --- Bank Info ---
       final bankInfo = wallet["bank"];
       String bankCode = "N/A";
       String bankShortCode = "N/A";
       String bankSwiftCode = "";
       String bankBranchCode = "N/A";
       String bankAddress = "";
+      String bankName = "Unknown Bank";
 
-      if (bankInfo is Map<String, dynamic>) {
+      if (bankInfo is Map) {
+        bankName = bankInfo["name"]?.toString() ?? "Unknown Bank";
         bankCode = bankInfo["code"]?.toString() ?? "N/A";
         bankShortCode = bankInfo["short_code"]?.toString() ?? "N/A";
         bankSwiftCode = bankInfo["swift_code"]?.toString() ?? "";
@@ -495,38 +512,46 @@ class GeneralWalletProvider extends ChangeNotifier {
         bankAddress = bankInfo["address"]?.toString() ?? "";
       }
 
+      // --- Currency Info ---
+      final currency = wallet["currency"];
+      String currencyName = "Unknown Currency";
+      String currencyType = "Unknown Type";
+      String currencySymbol = "₦";
+      String currencyCode = "NGN";
+      String currencyId = "";
+
+      if (currency is Map) {
+        currencyName = currency["name"]?.toString() ?? "Unknown Currency";
+        currencyType = currency["type"]?.toString() ?? "Unknown Type";
+        currencySymbol = currency["symbol"]?.toString() ?? "₦";
+        currencyCode = currency["code"]?.toString() ?? "NGN";
+        currencyId = currency["id"]?.toString() ?? "";
+      }
+
+      // --- Build final wallet map ---
       return {
-        "type": wallet["ownership_type"] ?? "Normal wallet",
-        "id": wallet["id"],
-        "currency_name": wallet["currency"] is Map && wallet["currency"]?["name"] != null
-            ? wallet["currency"]["name"]
-            : "Unknown Currency",
-        "currency_type": wallet["currency"] is Map && wallet["currency"]?["type"] != null
-            ? wallet["currency"]["type"]
-            : "Unknown Type",
+        "type": wallet["ownership_type"]?.toString() ?? "Normal wallet",
+        "id": wallet["id"]?.toString() ?? "",
+        "currency_name": currencyName,
+        "currency_type": currencyType,
         "name": wallet["ownership_label"]?.toString() ?? "Wallet",
-        "wallet_number": wallet["wallet_number"] ?? "N/A",
+        "wallet_number": wallet["wallet_number"]?.toString() ?? "N/A",
         "balance": double.tryParse(wallet["balance"]?.toString() ?? "0.0") ?? 0.0,
-        "currency": wallet["currency"]?["symbol"] ?? "₦",
-        "bank_name": wallet["bank"] is Map && wallet["bank"]?["name"] != null
-            ? wallet["bank"]["name"]
-            : "Unknown Bank",
+        "currency": currencySymbol,
+        "bank_name": bankName,
         "bank_code": bankCode,
         "bank_short_code": bankShortCode,
         "bank_swift_code": bankSwiftCode,
         "bank_branch_code": bankBranchCode,
         "bank_address": bankAddress,
-        "currency_code": wallet["currency"] is Map && wallet["currency"]?["code"] != null
-            ? wallet["currency"]["code"]
-            : "NGN",
-        "currency_id": wallet["currency"] is Map && wallet["currency"]?["id"] != null
-            ? wallet["currency"]["id"]
-            : "",
+        "currency_code": currencyCode,
+        "currency_id": currencyId,
         "currency_network": network,
         "label": label,
         "status": walletStatus,
         "created_at": createdAt,
         "wallet_address": walletAddress,
+        "provider_metadata": providerMetadata,
       };
     }).toList().reversed.toList();
   }

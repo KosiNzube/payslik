@@ -76,7 +76,7 @@ class _BaseLayoutState extends State<BaseLayout> {
 
   List<Widget> _buildPages() {
     List<Widget> pages = [
-      const DashboardPage7G(),
+      const DashboardY(),
       const WalletPage(),
     ];
 
