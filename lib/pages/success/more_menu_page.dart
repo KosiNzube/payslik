@@ -6,6 +6,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:gobeller/newdesigns/TradingAgentConfigScreen.dart';
+import 'package:gobeller/newdesigns/WalletLiquidationApp.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:persistent_bottom_nav_bar/persistent_bottom_nav_bar.dart';
@@ -141,6 +142,11 @@ class _MoreMenuPageState extends State<MoreMenuPage> {
       if (_menuItems['display-corporate-account-menu'] == true) {
         cards.add(_buildMenuCard(context, icon: Icons.business, label: "Corporate", route: Routes.corporate, index: index++));
       }
+
+      if (_menuItems['display-wallet-full-liquidation-menu'] == true) {
+        cards.add(_buildMenuCard(context, icon: Icons.transform, label: "Liquidate", route: Routes.corporate, index: index++));
+      }
+
     }
 
     if(Solarcoin){
@@ -500,6 +506,123 @@ class _MoreMenuPageState extends State<MoreMenuPage> {
          );
 
        }
+
+       else if(label=="Liquidate"){
+         showModalBottomSheet(
+           context: context,
+           backgroundColor: Colors.transparent,
+           isScrollControlled: true,
+           builder: (context) => DraggableScrollableSheet(
+             initialChildSize: 0.6,
+             minChildSize: 0.3,
+             maxChildSize: 0.9,
+             builder: (context, scrollController) => Container(
+               decoration: BoxDecoration(
+                 color: Colors.white,
+                 borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+               ),
+               child: Column(
+                 children: [
+                   // Drag handle
+                   Container(
+                     width: 40,
+                     height: 4,
+                     margin: const EdgeInsets.only(top: 12, bottom: 8),
+                     decoration: BoxDecoration(
+                       color: Colors.white.withOpacity(0.3),
+                       borderRadius: BorderRadius.circular(2),
+                     ),
+                   ),
+                   // Title
+                   Padding(
+                     padding: const EdgeInsets.all(20),
+                     child: Text(
+                       'Select Wallet',
+                       style: GoogleFonts.poppins(
+                         color: Colors.black,
+                         fontSize: 18,
+                         fontWeight: FontWeight.bold,
+                       ),
+                     ),
+                   ),
+                   // Scrollable wallet list
+                   Expanded(
+                     child: ListView.builder(
+                       controller: scrollController,
+                       padding: const EdgeInsets.only(bottom: 20),
+                       itemCount: provider.fiatWallets.length,
+                       itemBuilder: (context, index) {
+                         final w = provider.fiatWallets[index];
+
+                         return Container(
+                           decoration: BoxDecoration(
+                             borderRadius: BorderRadius.circular(10),
+                             color: Colors.white70,
+                             border: Border.all(color: Colors.black),
+                           ),
+                           margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                           child: ListTile(
+                             contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                             leading: _buildCurrencyIcon(w['currency_code']),
+                             title: Column(
+                               mainAxisAlignment: MainAxisAlignment.start,
+                               crossAxisAlignment: CrossAxisAlignment.start,
+                               children: [
+                                 Text(
+                                   w['currency_name'] ?? "---",
+                                   style: GoogleFonts.poppins(
+                                     color: Colors.black,
+                                     fontSize: 11.5,
+                                     fontWeight: FontWeight.w600,
+                                   ),
+                                 ),
+                                 Row(
+                                   children: [
+                                     Text(
+                                       w['currency'] ?? "---",
+                                       style: GoogleFonts.inter(
+                                         color: Colors.black,
+                                         fontSize: 17,
+                                         fontWeight: FontWeight.w600,
+                                       ),
+                                     ),
+                                     const SizedBox(width: 8),
+                                     Text(
+                                       NumberFormat("#,##0.00").format(w["balance"] ?? 0.0),
+                                       style: GoogleFonts.poppins(
+                                         color: Colors.black,
+                                         fontSize: 17,
+                                         fontWeight: FontWeight.w600,
+                                       ),
+                                     ),
+                                   ],
+                                 ),
+                               ],
+                             ),
+                             //  trailing: isSelected ? const Icon(Icons.check, color: Colors.black, size: 20) : null,
+                             onTap: () {
+                               //walletProvider.selectWallet(index);
+
+                               Navigator.pushReplacement(
+                                 context,
+                                 MaterialPageRoute(
+                                     builder: (context) => WalletLiquidationScreen(wallet: w)),
+                               );
+                             },
+                           ),
+                         );
+                       },
+                     ),
+                   ),
+                 ],
+               ),
+             ),
+           ),
+         );
+
+       }
+
        else if(label=="To Wallet"){
          showModalBottomSheet(
            context: context,

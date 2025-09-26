@@ -143,6 +143,7 @@ class _WelcomePageState extends State<WelcomePage> with TickerProviderStateMixin
 
         final primaryColor = parseColor(primaryColorHex, fallbackHex: '#6200EE');
         final tertiaryColor = parseColor(tertiaryColorHex, fallbackHex: '#000000');
+        final identityCode = orgData['org_identity_code'] ?? '';
 
         return Scaffold(
           body: Stack(
@@ -200,6 +201,7 @@ class _WelcomePageState extends State<WelcomePage> with TickerProviderStateMixin
                   welcomeTitle,
                   welcomeDescription,
                   primaryColor,
+                    identityCode
                 ),
               ),
             ],
@@ -214,7 +216,7 @@ class _WelcomePageState extends State<WelcomePage> with TickerProviderStateMixin
       String? logoUrl,
       String welcomeTitle,
       String welcomeDescription,
-      Color primaryColor,
+      Color primaryColor, identityCode,
       ) {
     return Column(
       children: [
@@ -307,41 +309,44 @@ class _WelcomePageState extends State<WelcomePage> with TickerProviderStateMixin
                     customColor: primaryColor, // Add this
                   ),
                 ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: _buildButton(
-                    context: context,
-                    text: "Register",
-                    isOutlined: false,
-                    onPressed: () {
-                      final orgController = Provider.of<OrganizationController>(context, listen: false);
-                      final orgData = orgController.organizationData?['data'] ?? {};
-                      final identityCode = orgData['org_identity_code'] ?? '';
 
-                      if (identityCode == '0053') {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) =>  RegisterWebView(link: 'https://app.easy-buyandowncooperative.com/register',),
-                          ),
-                        );
-                      } else if(identityCode == '0068'){
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) =>  RegisterWebView(link: 'https://fxoracleaiglobal.com/',),
-                          ),
-                        );
-                      }
+                if(identityCode!="0053")...[
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: _buildButton(
+                      context: context,
+                      text: "Register",
+                      isOutlined: false,
+                      onPressed: () {
+                        final orgController = Provider.of<OrganizationController>(context, listen: false);
+                        final orgData = orgController.organizationData?['data'] ?? {};
+                        final identityCode = orgData['org_identity_code'] ?? '';
+
+                        if (identityCode == '0053') {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>  RegisterWebView(link: 'https://app.easy-buyandowncooperative.com/register',),
+                            ),
+                          );
+                        } else if(identityCode == '0068'){
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>  RegisterWebView(link: 'https://fxoracleaiglobal.com/',),
+                            ),
+                          );
+                        }
 
 
-                      else {
-                        Navigator.pushNamed(context, '/register');
-                      }
-                    },
-                    customColor: primaryColor, // Add this
+                        else {
+                          Navigator.pushNamed(context, '/register');
+                        }
+                      },
+                      customColor: primaryColor, // Add this
+                    ),
                   ),
-                ),
+                ]
               ],
             ),
           ),

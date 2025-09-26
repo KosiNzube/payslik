@@ -38,6 +38,7 @@ import '../../controller/WalletController.dart';
 import '../../controller/WalletTransactionController.dart';
 import '../../controller/create_wallet_controller.dart';
 import '../../newdesigns/ReceiveMoneyScreen.dart';
+import '../../newdesigns/WalletLiquidationApp.dart';
 import '../../newdesigns/quick_actions_list.dart';
 import '../../newdesigns/swap_page_intent.dart';
 import '../../newdesigns/wallet_to_bank_intent.dart';
@@ -1988,9 +1989,9 @@ class _RecommendedSectionState extends State<RecommendedSection>
   final Color _defaultTertiaryColor = const Color(0xFFF5F5F5);
   Color _primaryColor=Color(0xFFFF9800);
   Color _secondaryColor=Colors.teal;
+
   Map<String, dynamic> _menuItems = {};
-
-
+  List<Widget> _menuCards = [];
   // Get organization features
 
   bool isVtuEnabled = false;
@@ -2046,9 +2047,102 @@ class _RecommendedSectionState extends State<RecommendedSection>
       });
     }
 
+    final cards = await _buildVisibleMenuCards();
+    setState(() {
+      _menuCards = cards;
+    });
+
   }
 
-  Future<void> _buildVisibleMenuCards() async {
+  Widget _buildCurrencyIcon(String currencyCode) {
+    switch (currencyCode) {
+    // Nigerian Naira
+      case "NGN":
+        return Flag.fromCode(FlagsCode.NG, height: 18, width: 18);
+
+    // West African CFA franc
+      case "XOF":
+        return Flag.fromCode(FlagsCode.EC, height: 18, width: 18); // Using Ivory Coast flag for XOF
+
+    // Central African CFA franc
+      case "XAF":
+        return Flag.fromCode(FlagsCode.CM, height: 18, width: 18); // Using Cameroon flag for XAF
+
+    // Congolese franc
+      case "CDF":
+        return Flag.fromCode(FlagsCode.CD, height: 18, width: 18);
+
+    // Ghanaian cedi
+      case "GHS":
+        return Flag.fromCode(FlagsCode.GH, height: 18, width: 18);
+
+    // Kenyan shilling
+      case "KES":
+        return Flag.fromCode(FlagsCode.KE, height: 18, width: 18);
+
+    // Lesotho loti
+      case "LSL":
+        return Flag.fromCode(FlagsCode.LS, height: 18, width: 18);
+
+    // Malawian kwacha
+      case "MWK":
+        return Flag.fromCode(FlagsCode.MW, height: 18, width: 18);
+
+    // Mozambican metical
+      case "MZN":
+        return Flag.fromCode(FlagsCode.MZ, height: 18, width: 18);
+
+    // Rwandan franc
+      case "RWF":
+        return Flag.fromCode(FlagsCode.RW, height: 18, width: 18);
+
+    // Sierra Leonean leone
+      case "SLL":
+        return Flag.fromCode(FlagsCode.SL, height: 18, width: 18);
+
+    // Tanzanian shilling
+      case "TZS":
+        return Flag.fromCode(FlagsCode.TZ, height: 18, width: 18);
+
+    // Ugandan shilling
+      case "UGX":
+        return Flag.fromCode(FlagsCode.UG, height: 18, width: 18);
+
+    // Zambian kwacha
+      case "ZMW":
+        return Flag.fromCode(FlagsCode.ZM, height: 18, width: 18);
+
+    // Existing logic for global currencies
+      case "USD":
+        return Flag.fromCode(FlagsCode.US, height: 18, width: 18);
+      case "GBP":
+        return Flag.fromCode(FlagsCode.GB_ENG, height: 18, width: 18);
+      case "EUR":
+        return Flag.fromCode(FlagsCode.EU, height: 18, width: 18);
+      case "CAD":
+        return Flag.fromCode(FlagsCode.CA, height: 18, width: 18);
+
+    // Crypto
+      case "USDT":
+        return Image.asset('assets/tether.png', height: 18, width: 18);
+      case "USDC":
+        return Image.asset('assets/usdc.png', height: 18, width: 18);
+      case "SLC":
+        return Image.asset('assets/carbon.png', height: 18, width: 18);
+    // Default fallback
+      default:
+        return Text(currencyCode);
+    }
+
+  }
+
+
+  Future<List<Widget>> _buildVisibleMenuCards() async {
+    List<Widget> cards = [];
+    int index = 0;
+
+    final provider = Provider.of<GeneralWalletProvider>(context, listen: false);
+
     final prefs = await SharedPreferences.getInstance();
     final orgJson = prefs.getString('organizationData');
 
@@ -2092,12 +2186,43 @@ class _RecommendedSectionState extends State<RecommendedSection>
       if (_menuItems['display-cable-tv-menu'] == true) {
         cable=true;
       }
+
+      setState(() {
+        index++;
+
+      });
+      cards.add(_buildAnimatedButton(
+
+          route: () {
+            _showTransferOptions(context);
+          },
+
+          'Pay Bills', FontAwesomeIcons.receipt,
+          _secondaryColor!.withOpacity(0.5), 2));
+
     }
 
     // Only show loan if enabled
     if (isLoanEnabled) {
       if (_menuItems['display-loan-menu'] == true) {
         loan=true;
+
+
+        cards.add(_buildAnimatedButton(
+
+            route: (){
+
+              PersistentNavBarNavigator.pushNewScreen(
+                context,
+                screen: LoanPage(),
+                withNavBar: true,
+              );
+
+            },
+
+            'Loans', FontAwesomeIcons.moneyBill,
+            _secondaryColor!.withOpacity(0.5),0));
+
       }
     }
 
@@ -2105,27 +2230,229 @@ class _RecommendedSectionState extends State<RecommendedSection>
     if (isInvestmentEnabled) {
       if (_menuItems['display-investment-menu'] == true) {
         investment=true;
+
+        cards.add(_buildAnimatedButton(
+            route: (){
+
+              Navigator.pushNamed(context, Routes.investment);
+
+
+
+            },
+
+            'Invest', Icons.account_balance_outlined, _secondaryColor!.withOpacity(0.5), 1));
       }
     }
 
-    if (isTarget_Savings_Enabled) {
-      ts=true;
-
-    }
     if (_menuItems['display-crypto-exchange-menu'] == true) {
       crypto=true;
+
+
+      cards.add(_buildAnimatedButton(
+          route: (){
+
+            PersistentNavBarNavigator.pushNewScreen(
+              context,
+              screen: CryptoWalletPage(menu:true),
+              withNavBar: true,
+            );
+
+
+          },
+
+          'Crypto', Icons.currency_bitcoin_sharp, _secondaryColor!.withOpacity(0.5), 1));
     }
 
     // Only show BNLP if enabled
     if (isBNPLEnabled) {
       if (_menuItems['display-buy-now-pay-later-menu'] == true) {
         bnpl=true;
+
+
+        cards.add( _buildAnimatedButton(
+
+            route: (){
+
+              Navigator.pushNamed(context, Routes.borrow);
+
+
+
+            },
+
+            'BNPL', Icons.card_giftcard_outlined,
+            _secondaryColor!.withOpacity(0.5), 3));
+      }
+    }
+    if (isCustomerMgtEnabled) {
+      if (_menuItems['display-wallet-full-liquidation-menu'] == true) {
+
+
+        cards.add( _buildAnimatedButton(
+
+            route: (){
+
+              showModalBottomSheet(
+                context: context,
+                backgroundColor: Colors.transparent,
+                isScrollControlled: true,
+                builder: (context) => DraggableScrollableSheet(
+                  initialChildSize: 0.6,
+                  minChildSize: 0.3,
+                  maxChildSize: 0.9,
+                  builder: (context, scrollController) => Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                    ),
+                    child: Column(
+                      children: [
+                        // Drag handle
+                        Container(
+                          width: 40,
+                          height: 4,
+                          margin: const EdgeInsets.only(top: 12, bottom: 8),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.3),
+                            borderRadius: BorderRadius.circular(2),
+                          ),
+                        ),
+                        // Title
+                        Padding(
+                          padding: const EdgeInsets.all(20),
+                          child: Text(
+                            'Select Wallet',
+                            style: GoogleFonts.poppins(
+                              color: Colors.black,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                        // Scrollable wallet list
+                        Expanded(
+                          child: ListView.builder(
+                            controller: scrollController,
+                            padding: const EdgeInsets.only(bottom: 20),
+                            itemCount: provider.fiatWallets.length,
+                            itemBuilder: (context, index) {
+                              final w = provider.fiatWallets[index];
+
+                              return Container(
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(10),
+                                  color: Colors.white70,
+                                  border: Border.all(color: Colors.black),
+                                ),
+                                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                                child: ListTile(
+                                  contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                  leading: _buildCurrencyIcon(w['currency_code']),
+                                  title: Column(
+                                    mainAxisAlignment: MainAxisAlignment.start,
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        w['currency_name'] ?? "---",
+                                        style: GoogleFonts.poppins(
+                                          color: Colors.black,
+                                          fontSize: 11.5,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                      Row(
+                                        children: [
+                                          Text(
+                                            w['currency'] ?? "---",
+                                            style: GoogleFonts.inter(
+                                              color: Colors.black,
+                                              fontSize: 17,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Text(
+                                            NumberFormat("#,##0.00").format(w["balance"] ?? 0.0),
+                                            style: GoogleFonts.poppins(
+                                              color: Colors.black,
+                                              fontSize: 17,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                  //  trailing: isSelected ? const Icon(Icons.check, color: Colors.black, size: 20) : null,
+                                  onTap: () {
+                                    //walletProvider.selectWallet(index);
+
+                                    Navigator.pushReplacement(
+                                      context,
+                                      MaterialPageRoute(
+                                          builder: (context) => WalletLiquidationScreen(wallet: w)),
+                                    );
+                                  },
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+
+
+            },
+
+            'Liquidate', Icons.transform,
+            _secondaryColor!.withOpacity(0.5), 3));
       }
     }
 
+    if (isTarget_Savings_Enabled) {
+      ts=true;
+
+
+      cards.add(_buildAnimatedButton(
+          route: (){
+
+            Navigator.pushNamed(context, Routes.target_savings);
 
 
 
+          },
+
+          'Target..', CupertinoIcons.scope, _secondaryColor!.withOpacity(0.5), 1));
+
+
+    }
+
+    if (cards.length > 4) {
+      // Remove all items beyond the 4th (index 3)
+      cards = cards.sublist(0, 4);
+
+      // Replace the 4th item with "More" button
+      cards[3] = _buildAnimatedButton(
+          route: () {
+            PersistentNavBarNavigator.pushNewScreen(
+              context,
+              screen: MoreMenuPage(),
+              withNavBar: true,
+            );
+          },
+          'More',
+          Icons.apps_rounded,
+          _secondaryColor!.withOpacity(0.5),
+          3
+      );
+
+      setState(() {});
+    }
+
+    return cards;
   }
 
 
@@ -2351,6 +2678,7 @@ class _RecommendedSectionState extends State<RecommendedSection>
             ),
           ),
           const SizedBox(height: 18),
+          /*
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -2402,6 +2730,8 @@ class _RecommendedSectionState extends State<RecommendedSection>
 
                     'Crypto', Icons.currency_bitcoin_sharp, _secondaryColor!.withOpacity(0.5), 1),
 
+
+
               _buildAnimatedButton(
 
                   route: (){
@@ -2419,6 +2749,12 @@ class _RecommendedSectionState extends State<RecommendedSection>
                   'More', Icons.apps_rounded,
                   _secondaryColor!.withOpacity(0.5), 3),
             ],
+          ),
+
+           */
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: _menuCards.take(4).toList(),
           ),
         ],
       ),
