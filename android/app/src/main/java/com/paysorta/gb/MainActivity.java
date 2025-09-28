@@ -1,4 +1,4 @@
-package com.ebowallet.gb;
+package com.paysorta.gb;
 
 
 import io.flutter.embedding.android.FlutterFragmentActivity;
