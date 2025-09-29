@@ -15,7 +15,7 @@ if (keystorePropertiesFile.exists()) {
 }
 
 android {
-    namespace = "com.paysorta.gb"
+    namespace = "com.ebowallet.gb"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = "25.2.9519653"
 
@@ -38,7 +38,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.paysorta.gb"
+        applicationId = "com.ebowallet.gb"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode

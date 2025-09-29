@@ -22,9 +22,9 @@ class OrganizationController extends ChangeNotifier {
     isLoading = true;
     notifyListeners();
 
-   // const String url = 'https://app.gobeller.com/api/v1/organizations/1111';
+    const String url = 'https://app.gobeller.com/api/v1/organizations/0053';
 
-    const String url = 'https://paysorta.matrixbanking.co/api/v1/organizations/1111';
+   // const String url = 'https://paysorta.matrixbanking.co/api/v1/organizations/0053';
 
     try {
       final response = await http.get(Uri.parse(url));
@@ -71,10 +71,10 @@ class OrganizationController extends ChangeNotifier {
     isLoading = true;
     notifyListeners();
 
-   // const String url = 'https://app.gobeller.cc/api/v1/customized-app-api/public-app/settings';
+    const String url = 'https://app.gobeller.cc/api/v1/customized-app-api/public-app/settings';
 
 
-    const String url = 'https://paysorta.matrixbanking.co/api/v1/customized-app-api/public-app/settings';
+  //  const String url = 'https://paysorta.matrixbanking.co/api/v1/customized-app-api/public-app/settings';
     try {
       final response = await http.get(
         Uri.parse(url),
@@ -148,9 +148,9 @@ class OrganizationController extends ChangeNotifier {
       return;
     }
 
-   // final String url = 'https://app.gobeller.cc/api/v1/organizations/customer-support-details/$appId';
+    final String url = 'https://app.gobeller.cc/api/v1/organizations/customer-support-details/$appId';
 
-    final String url = 'https://paysorta.matrixbanking.co/api/v1/organizations/customer-support-details/$appId';
+  //  final String url = 'https://paysorta.matrixbanking.co/api/v1/organizations/customer-support-details/$appId';
 
     try {
       final response = await http.get(Uri.parse(url));
