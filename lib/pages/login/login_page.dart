@@ -52,6 +52,7 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
   Color? _secondaryColor;
   String? _logoUrl;
 
+  String identityCode="";
   @override
   void initState() {
     super.initState();
@@ -71,7 +72,11 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
     _loadPrimaryColorAndLogo();
     _checkPasswordResetEnabled();
     _checkStoredUsername();
-    _autoBiometricLogin(); // <- Call here
+    _autoBiometricLogin();
+
+    final orgController = Provider.of<OrganizationController>(context, listen: false);
+    final orgData = orgController.organizationData?['data'] ?? {};
+     identityCode = orgData['org_identity_code'] ?? '';// <- Call here
   }
   void _showLoadingDialog() {
     showDialog(
@@ -816,57 +821,59 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
                               ),
                             ),
 
-                          TextButton(
-                            onPressed: () {
-                              final orgController = Provider.of<OrganizationController>(context, listen: false);
-                              final orgData = orgController.organizationData?['data'] ?? {};
-                              final identityCode = orgData['org_identity_code'] ?? '';
 
-                              if (identityCode == '0053') {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) =>  RegisterWebView(link: 'https://app.easy-buyandowncooperative.com/register',),
-                                  ),
-                                );
-                              } else if(identityCode == '0068'){
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) =>  RegisterWebView(link: 'https://fxoracleaiglobal.com/',),
-                                  ),
-                                );
-                              }
+                          if(identityCode!="0053")
+                            TextButton(
+                              onPressed: () {
+                                final orgController = Provider.of<OrganizationController>(context, listen: false);
+                                final orgData = orgController.organizationData?['data'] ?? {};
+                                final identityCode = orgData['org_identity_code'] ?? '';
 
-
-                              else {
-                                Navigator.pushNamed(context, '/register');
-                              }
-                            },
-                            style: TextButton.styleFrom(
-                              foregroundColor: const Color(0xFF667085),
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                            ),
-                            child: RichText(
-                              text: const TextSpan(
-                                text: "Don't have an account? ",
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: Color(0xFF667085),
-                                  fontWeight: FontWeight.w400,
-                                ),
-                                children: [
-                                  TextSpan(
-                                    text: "Sign up",
-                                    style: TextStyle(
-                                      color: Color(0xFF667EEA),
-                                      fontWeight: FontWeight.w600,
+                                if (identityCode == '0053') {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) =>  RegisterWebView(link: 'https://app.easy-buyandowncooperative.com/register',),
                                     ),
+                                  );
+                                } else if(identityCode == '0068'){
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) =>  RegisterWebView(link: 'https://fxoracleaiglobal.com/',),
+                                    ),
+                                  );
+                                }
+
+
+                                else {
+                                  Navigator.pushNamed(context, '/register');
+                                }
+                              },
+                              style: TextButton.styleFrom(
+                                foregroundColor: const Color(0xFF667085),
+                                padding: const EdgeInsets.symmetric(vertical: 12),
+                              ),
+                              child: RichText(
+                                text: const TextSpan(
+                                  text: "Don't have an account? ",
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Color(0xFF667085),
+                                    fontWeight: FontWeight.w400,
                                   ),
-                                ],
+                                  children: [
+                                    TextSpan(
+                                      text: "Sign up",
+                                      style: TextStyle(
+                                        color: Color(0xFF667EEA),
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
-                          ),
                         ],
                       ),
 
